@@ -220,6 +220,46 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCompareStructures = async (mobileFile: File, referenceFile: File) => {
+    const addLocalError = (message: string) => {
+      const entry: TerminalEntry = {
+        id: `rmsd-error-${Date.now()}`,
+        type: 'ERROR',
+        content: message,
+        timestamp: new Date(),
+      };
+      setEngine((prev) => prev ? { ...prev, terminalHistory: [entry, ...prev.terminalHistory] } : prev);
+    };
+
+    if (mobileFile.size + referenceFile.size > 1_800_000) {
+      addLocalError('Combined PDB files must be smaller than 1.8 MB for comparison.');
+      return;
+    }
+
+    setIsResolving(true);
+    try {
+      const [mobilePdbText, referencePdbText] = await Promise.all([mobileFile.text(), referenceFile.text()]);
+      const response = await fetch('/api/agent/protein/rmsd', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ mobilePdbText, referencePdbText }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'PDB comparison failed');
+      if (data?.engine) {
+        setEngine(data.engine);
+        try {
+          localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(data.engine.terminalHistory));
+        } catch {}
+      }
+    } catch (error) {
+      addLocalError(error instanceof Error ? error.message : 'PDB comparison failed');
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
   const setEnvValue = async (key: 'temperature' | 'znConcentration', val: number) => {
     if (!engine) return;
     const globalEnv = { ...engine.globalEnv, [key]: val };
@@ -401,6 +441,7 @@ const App: React.FC = () => {
                     onClear={() => {}}
                     isResolving={isResolving}
                     onStructureFile={handleStructureFile}
+                    onCompareStructures={handleCompareStructures}
                   />
                 </div>
                 <div className="flex-1 glass rounded-2xl p-4 flex flex-col justify-center bg-slate-900/40 border-slate-800 hidden md:flex">
