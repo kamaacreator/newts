@@ -132,6 +132,14 @@ def infer_pdb(sequence: str) -> str:
             return model.infer_pdb(sequence)
 
 
+@app.on_event("startup")
+def startup_load_model():
+    # Production container sets FOLDING_EAGER_LOAD=1 so readiness is meaningful.
+    # Unit tests and lightweight local contract tests can leave lazy loading enabled.
+    if os.getenv("FOLDING_EAGER_LOAD", "0").strip() == "1":
+        load_model()
+
+
 @app.get("/healthz")
 def healthz():
     return {"status": "ok"}
