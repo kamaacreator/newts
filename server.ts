@@ -321,7 +321,9 @@ app.post('/api/agent/commands', async (req, res) => {
   // Detect domain
   const cmdLower = cleanCmd.toLowerCase();
   let targetDomain: ScientificDomain = engine.activeDomain;
-  if (
+  if (cleanCmd.toUpperCase().startsWith('SEQUENCE:')) {
+    targetDomain = 'BIOLOGY';
+  } else if (
     cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || 
     cmdLower.includes('gene') || cmdLower.includes('r-loop') || cmdLower.includes('hdr') || 
     cmdLower.includes('nhej') || cmdLower.includes('chromatin') || cmdLower.includes('dna') || 
