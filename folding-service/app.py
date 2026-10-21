@@ -1,4 +1,3 @@
-import asyncio
 import os
 import re
 import secrets
@@ -114,6 +113,10 @@ def load_model():
         if device not in ("cuda", "cpu"):
             raise RuntimeError("FOLDING_DEVICE must be either 'cuda' or 'cpu'.")
         model = esm.pretrained.esmfold_v1().eval()
+        chunk_size = int(os.getenv("FOLDING_CHUNK_SIZE", "64"))
+        if chunk_size < 1 or chunk_size > 256:
+            raise RuntimeError("FOLDING_CHUNK_SIZE must be between 1 and 256.")
+        model.set_chunk_size(chunk_size)
         model = model.cuda() if device == "cuda" else model.to("cpu")
         TORCH = torch
         MODEL = model
