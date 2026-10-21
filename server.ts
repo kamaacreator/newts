@@ -7,6 +7,7 @@ import { generateDeterministicCode, compileDeterministicData } from './services/
 import { calculateProteinSequenceFeatures } from './services/proteinSequence.ts';
 import { classifyScientificDomain } from './services/domainClassifier.ts';
 import { calculatePdbCaGeometry } from './services/proteinStructure.ts';
+import { calculateAlignedCaRmsd } from './services/proteinRmsd.ts';
 import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
 
 const app = express();
@@ -349,6 +350,57 @@ app.post('/api/agent/protein/structure', (req, res) => {
     return res.json({ success: true, features: geometry, finalResult, engine });
   } catch (error) {
     return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid PDB structure' });
+  }
+});
+
+app.post('/api/agent/protein/rmsd', (req, res) => {
+  if (!isRecord(req.body) || typeof req.body.mobilePdbText !== 'string' || typeof req.body.referencePdbText !== 'string') {
+    return res.status(400).json({ error: 'mobilePdbText and referencePdbText must both be PDB-format strings' });
+  }
+  try {
+    const comparison = calculateAlignedCaRmsd(req.body.mobilePdbText, req.body.referencePdbText);
+    const finalResult: ResolutionData = {
+      status: 'RESOLVED',
+      resultClass: 'computed',
+      method: comparison.method,
+      summary: `Computed aligned C-alpha RMSD for ${comparison.matchedResidueCount} residue matches using ${comparison.method}. This compares supplied coordinates and does not predict a fold.`,
+      states: [{
+        label: 'Aligned Structure Comparison',
+        metrics: [
+          { name: 'Aligned C-alpha RMSD', value: comparison.alignedCaRmsdAngstrom, unit: 'Å' },
+          { name: 'Matched Residues', value: comparison.matchedResidueCount, unit: 'residues' },
+          { name: 'Unmatched Mobile Residues', value: comparison.unmatchedMobileResidueCount, unit: 'residues' },
+          { name: 'Unmatched Reference Residues', value: comparison.unmatchedReferenceResidueCount, unit: 'residues' }
+        ]
+      }],
+      deterministicSteps: [
+        '1. Parsed C-alpha coordinates from the first model of both PDB files.',
+        '2. Matched residues by chain, residue number, insertion code, and residue name.',
+        '3. Centered matched coordinates and solved the optimal rigid-body quaternion superposition.',
+        '4. Computed RMSD after superposition; excluded residues are reported separately.',
+        ...comparison.limitations.map((limitation) => `Limitation: ${limitation}`)
+      ]
+    };
+    const timestamp = new Date();
+    const commandEntry: TerminalEntry = {
+      id: `rmsd-cmd-${Date.now()}`,
+      type: 'COMMAND',
+      content: 'Compare two PDB structures using aligned C-alpha RMSD',
+      timestamp,
+    };
+    const resultEntry: TerminalEntry = {
+      id: `rmsd-result-${Date.now() + 1}`,
+      type: 'RESOLUTION',
+      content: finalResult,
+      timestamp: new Date(),
+    };
+    engine.terminalHistory = [resultEntry, commandEntry, ...engine.terminalHistory].slice(0, 500);
+    engine.logs.unshift('[COMPUTATION] Aligned C-alpha RMSD comparison completed on supplied structures.');
+    engine.logs = engine.logs.slice(0, 50);
+    saveLocalStorage();
+    return res.json({ success: true, comparison, finalResult, engine });
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'PDB comparison failed' });
   }
 });
 
