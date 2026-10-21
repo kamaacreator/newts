@@ -304,7 +304,47 @@ app.post('/api/agent/protein/structure', (req, res) => {
     return res.status(400).json({ error: 'pdbText must be supplied as a PDB-format string' });
   }
   try {
-    return res.json(calculatePdbCaGeometry(req.body.pdbText));
+    const geometry = calculatePdbCaGeometry(req.body.pdbText);
+    const finalResult: ResolutionData = {
+      status: 'RESOLVED',
+      summary: `Computed coordinate-based C-alpha geometry from the supplied PDB using ${geometry.method}. This is structure analysis, not folding prediction or energy calculation.`,
+      states: [{
+        label: 'PDB C-alpha Geometry',
+        metrics: [
+          { name: 'Residue Count', value: geometry.residueCount, unit: 'residues' },
+          { name: 'Chain Count', value: geometry.chainCount, unit: 'chains' },
+          { name: 'Radius of Gyration', value: geometry.radiusOfGyrationAngstrom, unit: 'Å' },
+          { name: 'Nonlocal Contacts (<8 Å)', value: geometry.nonlocalContactsAt8Angstrom, unit: 'pairs' },
+          ...Object.entries(geometry.sequenceByChain).map(([chain, sequence]) => ({
+            name: `Chain ${chain} Sequence`, value: sequence, unit: 'one-letter sequence'
+          }))
+        ]
+      }],
+      deterministicSteps: [
+        '1. Parsed C-alpha ATOM records from the first PDB model.',
+        '2. Calculated radius of gyration from the C-alpha coordinate centroid.',
+        `3. Counted nonlocal C-alpha contacts using the stated 8.0 Å cutoff.`,
+        ...geometry.limitations.map((limitation) => `Limitation: ${limitation}`)
+      ]
+    };
+    const timestamp = new Date();
+    const commandEntry: TerminalEntry = {
+      id: `pdb-cmd-${Date.now()}`,
+      type: 'COMMAND',
+      content: 'Analyze uploaded PDB structure',
+      timestamp,
+    };
+    const resultEntry: TerminalEntry = {
+      id: `pdb-result-${Date.now() + 1}`,
+      type: 'RESOLUTION',
+      content: finalResult,
+      timestamp: new Date(),
+    };
+    engine.terminalHistory = [resultEntry, commandEntry, ...engine.terminalHistory].slice(0, 500);
+    engine.logs.unshift('[COMPUTATION] PDB C-alpha geometry analysis completed; no folding prediction was performed.');
+    engine.logs = engine.logs.slice(0, 50);
+    saveLocalStorage();
+    return res.json({ success: true, features: geometry, finalResult, engine });
   } catch (error) {
     return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid PDB structure' });
   }
