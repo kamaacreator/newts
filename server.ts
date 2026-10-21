@@ -307,6 +307,8 @@ app.post('/api/agent/protein/structure', (req, res) => {
     const geometry = calculatePdbCaGeometry(req.body.pdbText);
     const finalResult: ResolutionData = {
       status: 'RESOLVED',
+      resultClass: 'computed',
+      method: geometry.method,
       summary: `Computed coordinate-based C-alpha geometry from the supplied PDB using ${geometry.method}. This is structure analysis, not folding prediction or energy calculation.`,
       states: [{
         label: 'PDB C-alpha Geometry',
@@ -454,6 +456,8 @@ app.post('/api/agent/commands', async (req, res) => {
       const features = calculateProteinSequenceFeatures(cleanCmd.slice(cleanCmd.indexOf(':') + 1));
       finalResult = {
         status: 'RESOLVED',
+        resultClass: 'computed',
+        method: features.method,
         summary: `Computed primary-sequence features for ${features.sequenceLength} residues using ${features.method}. This is not a folding or structure-prediction result.`,
         states: [{
           label: 'Primary Sequence Features',
