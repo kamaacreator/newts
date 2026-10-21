@@ -62,8 +62,8 @@ export function verifySessionToken(token: unknown, config: AuthConfig, nowMs = D
   return constantTimeEqual(signature, signSession(expiresAt, sessionId, config.sessionSecret!));
 }
 
-export function revokeSessionToken(token: unknown, config: AuthConfig): void {
-  if (!verifySessionToken(token, config)) return;
+export function revokeSessionToken(token: unknown, config: AuthConfig, nowMs = Date.now()): void {
+  if (!verifySessionToken(token, config, nowMs)) return;
   const parts = (token as string).split('.');
   activeSessions.delete(parts[1]);
 }
