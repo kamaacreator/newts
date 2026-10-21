@@ -149,18 +149,23 @@ export function calculateAlignedCaRmsd(mobilePdbText: string, referencePdbText: 
     squaredError += (rx - q.x) ** 2 + (ry - q.y) ** 2 + (rz - q.z) ** 2;
   }
 
-  const matchedKeys = new Set(mobileAtoms.filter((atom) => {
-    const reference = referenceByKey.get(atom.residueKey);
-    return Boolean(reference && reference.residueName === atom.residueName);
-  }).map((atom) => atom.residueKey));
+  const matchedMobileKeys = new Set<string>();
+  const matchedReferenceKeys = new Set<string>();
+  for (const mobile of mobileAtoms) {
+    const reference = referenceByKey.get(mobile.residueKey);
+    if (reference && reference.residueName === mobile.residueName) {
+      matchedMobileKeys.add(mobile.residueKey);
+      matchedReferenceKeys.add(reference.residueKey);
+    }
+  }
 
   return {
     status: 'computed',
     method: 'horn-quaternion-superposition-ca-rmsd-v1',
     alignedCaRmsdAngstrom: Number(Math.sqrt(squaredError / matchedMobile.length).toFixed(4)),
     matchedResidueCount: matchedMobile.length,
-    unmatchedMobileResidueCount: mobileAtoms.filter((atom) => !matchedKeys.has(atom.residueKey)).length,
-    unmatchedReferenceResidueCount: referenceAtoms.filter((atom) => !matchedKeys.has(atom.residueKey)).length,
+    unmatchedMobileResidueCount: mobileAtoms.filter((atom) => !matchedMobileKeys.has(atom.residueKey)).length,
+    unmatchedReferenceResidueCount: referenceAtoms.filter((atom) => !matchedReferenceKeys.has(atom.residueKey)).length,
     residueMapping: 'Exact chain + residue number + insertion code + residue name; unmatched residues excluded.',
     limitations: [
       'RMSD compares supplied structures after optimal rigid-body superposition; it does not predict a fold.',
