@@ -5,6 +5,7 @@ import { EngineMode } from './types.ts';
 import type { EngineState, GlobalObjective, UniversalStateObject, TerminalEntry, ResolutionData, ScientificDomain } from './types.ts';
 import { generateDeterministicCode, compileDeterministicData } from './services/geminiService.ts';
 import { calculateProteinSequenceFeatures } from './services/proteinSequence.ts';
+import { classifyScientificDomain } from './services/domainClassifier.ts';
 
 const app = express();
 // Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
@@ -318,40 +319,10 @@ app.post('/api/agent/commands', async (req, res) => {
   const entryId = Date.now().toString();
   const entry: TerminalEntry = { id: entryId, type: 'COMMAND', content: cleanCmd, timestamp: new Date() };
 
-  // Detect domain
-  const cmdLower = cleanCmd.toLowerCase();
-  let targetDomain: ScientificDomain = engine.activeDomain;
-  if (cleanCmd.toUpperCase().startsWith('SEQUENCE:')) {
-    targetDomain = 'BIOLOGY';
-  } else if (
-    cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || 
-    cmdLower.includes('gene') || cmdLower.includes('r-loop') || cmdLower.includes('hdr') || 
-    cmdLower.includes('nhej') || cmdLower.includes('chromatin') || cmdLower.includes('dna') || 
-    cmdLower.includes('protein') || cmdLower.includes('p53') || cmdLower.includes('folding') || 
-    cmdLower.includes('trp-cage') || cmdLower.includes('biology')
-  ) {
-    targetDomain = 'BIOLOGY';
-  } else if (
-    cmdLower.includes('fea') || cmdLower.includes('cantilever') || cmdLower.includes('beam') || 
-    cmdLower.includes('structural') || cmdLower.includes('geotechnical') || cmdLower.includes('soil') || 
-    cmdLower.includes('stress') || cmdLower.includes('topology') || cmdLower.includes('simp') || 
-    cmdLower.includes('engineering')
-  ) {
-    targetDomain = 'ENGINEERING';
-  } else if (
-    cmdLower.includes('plasma') || cmdLower.includes('tokamak') || cmdLower.includes('magnetic') || 
-    cmdLower.includes('fusion') || cmdLower.includes('confinement') || cmdLower.includes('troyon') || 
-    cmdLower.includes('physics')
-  ) {
-    targetDomain = 'PHYSICS';
-  } else if (
-    cmdLower.includes('neural') || cmdLower.includes('gradient') || cmdLower.includes('loss') || 
-    cmdLower.includes('learning') || cmdLower.includes('transformer') || cmdLower.includes('attention') || 
-    cmdLower.includes('nats') || cmdLower.includes('ai') || cmdLower.includes('qubit') ||
-    cmdLower.includes('entropy')
-  ) {
-    targetDomain = 'AI';
-  }
+  // Shared classification avoids server/service domain disagreement.
+  const targetDomain: ScientificDomain = cleanCmd.toUpperCase().startsWith('SEQUENCE:')
+    ? 'BIOLOGY'
+    : classifyScientificDomain(cleanCmd, engine.activeDomain);
 
   const newActiveEntityId = (targetDomain !== engine.activeDomain) 
     ? (engine.entities.find(e => e.identity.domain === targetDomain)?.id || engine.activeEntityId)
