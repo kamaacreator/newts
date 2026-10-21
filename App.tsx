@@ -91,6 +91,11 @@ const App: React.FC = () => {
     const fetchTelemetry = async () => {
       try {
         const res = await fetch('/api/agent/telemetry');
+        if (res.status === 401 || res.status === 503) {
+          setAuthenticated(false);
+          setEngine(null);
+          return;
+        }
         const data = await res.json();
         setEngine(prev => {
           // If server history is populated, mirror to local storage
