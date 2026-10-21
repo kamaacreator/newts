@@ -30,3 +30,13 @@ This document records the initial source review of `main` at `6393f7116328be10e8
 - **Approved:** an identified reviewer or governing body accepted a named scope and revision.
 
 These terms are not interchangeable.
+
+
+## New bounded kernels added on the feature branch
+
+These additions are separate from the legacy heuristic protein-folding branch:
+
+- `primary-sequence-features-v1`: computes sequence length, residue composition, average molecular mass for an unmodified linear chain, Kyte–Doolittle GRAVY, and an approximate pI using a documented fixed-pKa charge model.
+- `pdb-ca-geometry-v1`: parses C-alpha ATOM coordinates from the first model of a PDB file and computes radius of gyration and nonlocal contacts under an 8.0 Å cutoff.
+
+Both are labelled `computed` with method identifiers in result metadata. This means the corresponding algorithm ran on supplied input; it does not mean the biological interpretation, supplied structure, or any downstream scientific conclusion has been independently validated. Synthetic tests check arithmetic/parser invariants. Reference-data benchmarking and external review remain outstanding.
