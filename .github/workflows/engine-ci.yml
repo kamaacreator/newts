@@ -41,3 +41,22 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  folding-service-contract:
+    name: Folding service contract tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install API test dependencies
+        run: python -m pip install fastapi==0.115.12 httpx==0.28.1
+
+      - name: Run CPU-only folding service contract tests
+        run: python -m unittest discover -s folding-service -p 'test_*.py'
