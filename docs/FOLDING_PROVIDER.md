@@ -29,6 +29,12 @@ The response records provider, model identifier, sequence length, C-alpha residu
 
 Provider errors are explicit: missing configuration returns 503; invalid sequence returns 400; upstream failure returns 502; timeout returns 504; invalid output returns 502. There is no silent fallback to the old heuristic branch.
 
+## Self-hosted reference implementation
+
+The repository now includes an optional GPU-oriented ESMFold v1 service in `folding-service/`. It implements the provider contract with bearer-token authentication, sequence limits, output sequence validation, and no sequence persistence. See [folding-service/README.md](../folding-service/README.md) for deployment instructions.
+
+The service has CPU-only contract tests, but CI does not install the ESMFold weights, build the CUDA image, or execute actual model inference. Treat this as an implementation path, not a deployed or scientifically approved model. A live inference run and benchmark remain release gates.
+
 ## Data handling and release gates
 
 The configured provider receives the submitted sequence. Only configure a service after reviewing its privacy terms, retention, access controls, availability, and model license. Do not submit sensitive or restricted sequences without authorization.
