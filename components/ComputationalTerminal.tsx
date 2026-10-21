@@ -59,7 +59,7 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
 
   const copyToClipboard = async (id: string, data: ResolutionData) => {
     const formattedText = `
---- AETHERIS DETERMINISTIC RESOLUTION REPORT ---
+--- AETHERIS PROTOTYPE CALCULATION REPORT (NOT SCIENTIFICALLY VALIDATED) ---
 SUMMARY: ${data.summary}
 STATES:
 ${data.states.map(s => {
@@ -67,7 +67,7 @@ ${data.states.map(s => {
   return `- ${s.label}: [${metricsStr}]`;
 }).join('\n')}
 ${data.transitions ? `TRANSITIONS:\n${data.transitions.map(t => `- ${t.from} → ${t.to}: P = ${t.probability}`).join('\n')}` : ''}
-${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''}
+${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${data.deterministicCode}` : ''}
 ------------------------------------------------
     `.trim();
 
