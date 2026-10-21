@@ -22,3 +22,7 @@ Development mode bypasses login for local development only. Do not deploy with `
 ## Remaining hardening work
 
 This first authentication layer is single-operator and stateless. Before a multi-user or regulated deployment, add account lifecycle management, password hashing backed by a user store, audit events, login rate limiting / lockout, secret rotation, CSRF testing, and deployment-specific reverse-proxy validation. Run a security review before production release.
+
+## Repository-history caution
+
+The runtime JSON file was removed from the current branch and added to `.gitignore`. This does not remove earlier versions from Git history. Because the repository is public, inspect historical copies for private conversation content or secrets. If sensitive material is present, coordinate a history rewrite and rotate any exposed credentials; deleting a file in a later commit is not equivalent to erasing it from repository history.
