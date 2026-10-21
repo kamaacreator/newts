@@ -172,12 +172,16 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></div>
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">Layer 2: Logic Controller</h3>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <span className="text-[8px] mono text-emerald-400/90 uppercase flex items-center gap-1.5 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+            <span className="w-1 h-1 rounded-full bg-emerald-400 animate-ping"></span>
+            Chat: Local Storage Saved
+          </span>
           <button 
             onClick={onClear}
             className="text-[8px] mono text-slate-500 hover:text-red-400 transition-colors uppercase tracking-widest"
           >
-            [Clear Terminal]
+            [Clear View]
           </button>
           <div className="text-[8px] mono text-slate-600 uppercase">Status: DETERMINISTIC_BRIDGE_ACTIVE</div>
         </div>

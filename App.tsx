@@ -16,13 +16,60 @@ const App: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
 
+  const CHAT_STORAGE_KEY = 'aetheris_conversations_chat_history';
+
+  // Load from local storage immediately on mount so conversations are never lost during server reboot
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(CHAT_STORAGE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          fetch('/api/agent/sync-storage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ terminalHistory: parsed })
+          }).then(res => res.json()).then(data => {
+            if (data?.engine) setEngine(data.engine);
+          }).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Local storage restore notice:', e);
+    }
+  }, []);
+
   useEffect(() => {
     let interval: any;
     const fetchTelemetry = async () => {
       try {
         const res = await fetch('/api/agent/telemetry');
         const data = await res.json();
-        setEngine(data.engine);
+        setEngine(prev => {
+          // If server history is populated, mirror to local storage
+          if (data.engine?.terminalHistory && data.engine.terminalHistory.length > 0) {
+            try {
+              localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(data.engine.terminalHistory));
+            } catch (e) {}
+          } else {
+            // If server rebooted with blank history, try restoring cached local storage
+            try {
+              const cached = localStorage.getItem(CHAT_STORAGE_KEY);
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  data.engine.terminalHistory = parsed;
+                  fetch('/api/agent/sync-storage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ terminalHistory: parsed })
+                  }).catch(() => {});
+                }
+              }
+            } catch (e) {}
+          }
+          return data.engine;
+        });
         setIsRunning(data.isRunning);
       } catch(e) {}
     };
@@ -193,6 +240,10 @@ const App: React.FC = () => {
                     history={engine.terminalHistory} 
                     onCommand={handleTerminalCommand} 
                     onClear={async () => {
+                         try {
+                           const existing = JSON.parse(localStorage.getItem('aetheris_archived_conversations') || '[]');
+                           localStorage.setItem('aetheris_archived_conversations', JSON.stringify([...existing, ...(engine.terminalHistory || [])]));
+                         } catch (e) {}
                          setEngine(p => { if(!p) return p; return { ...p, terminalHistory: [] }});
                          await fetch('/api/agent/state', {
                             method: 'POST',

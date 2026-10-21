@@ -1,13 +1,17 @@
 import express from 'express';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
-import { EngineMode, EngineState, GlobalObjective, UniversalStateObject, TerminalEntry, ResolutionData, ScientificDomain } from './types';
-import { generateDeterministicCode, compileDeterministicData } from './services/geminiService';
+import fs from 'fs';
+import { EngineMode } from './types.ts';
+import type { EngineState, GlobalObjective, UniversalStateObject, TerminalEntry, ResolutionData, ScientificDomain } from './types.ts';
+import { generateDeterministicCode, compileDeterministicData } from './services/geminiService.ts';
 
 const app = express();
-const PORT = 3000;
+// Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
+const PORT = Number(process.env.DEFAULT_APP_PORT) || 3000;
 
 app.use(express.json());
+
+const STORAGE_FILE = path.join(process.cwd(), 'local_storage.json');
 
 const INITIAL_ENTITIES: UniversalStateObject[] = [
   {
@@ -82,6 +86,58 @@ let engine: EngineState = {
   }
 };
 
+function loadLocalStorage() {
+  try {
+    if (fs.existsSync(STORAGE_FILE)) {
+      const raw = fs.readFileSync(STORAGE_FILE, 'utf-8');
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object') {
+        if (Array.isArray(data.terminalHistory) && data.terminalHistory.length > 0) {
+          engine.terminalHistory = data.terminalHistory;
+        }
+        if (Array.isArray(data.logs) && data.logs.length > 0) {
+          engine.logs = data.logs;
+        }
+        if (Array.isArray(data.objectives) && data.objectives.length > 0) {
+          engine.objectives = data.objectives;
+        }
+        if (data.globalEnv) {
+          engine.globalEnv = { ...engine.globalEnv, ...data.globalEnv };
+        }
+        if (Array.isArray(data.entities) && data.entities.length > 0) {
+          engine.entities = data.entities;
+        }
+        if (data.activeEntityId) engine.activeEntityId = data.activeEntityId;
+        if (data.activeDomain) engine.activeDomain = data.activeDomain;
+        console.log(`[STORAGE] Restored ${engine.terminalHistory.length} conversations from local storage`);
+      }
+    }
+  } catch (err) {
+    console.error('[STORAGE] Error loading local storage:', err);
+  }
+}
+
+function saveLocalStorage() {
+  try {
+    const data = {
+      terminalHistory: engine.terminalHistory,
+      logs: engine.logs,
+      objectives: engine.objectives,
+      globalEnv: engine.globalEnv,
+      entities: engine.entities,
+      activeEntityId: engine.activeEntityId,
+      activeDomain: engine.activeDomain,
+      savedAt: new Date().toISOString()
+    };
+    fs.writeFileSync(STORAGE_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('[STORAGE] Error saving local storage:', err);
+  }
+}
+
+// Load persisted conversations immediately on boot
+loadLocalStorage();
+
 let isRunning = false;
 let loopInterval: any;
 
@@ -127,10 +183,27 @@ const runHeuristicResolution = (cmd: string): ResolutionData => {
   const activeEntity = engine.entities.find(e => e.id === engine.activeEntityId);
   const cmdLower = cmd.toLowerCase();
   
-  let domain: ScientificDomain = engine.activeDomain;
-  if (cmdLower.includes('fea') || cmdLower.includes('topology') || cmdLower.includes('beam') || cmdLower.includes('engineering')) domain = 'ENGINEERING';
-  else if (cmdLower.includes('plasma') || cmdLower.includes('tokamak') || cmdLower.includes('physics')) domain = 'PHYSICS';
-  else if (cmdLower.includes('neural') || cmdLower.includes('learning') || cmdLower.includes('ai')) domain = 'AI';
+  // Strict domain classifier isolated from conversation history
+  let domain: ScientificDomain = 'BIOLOGY';
+  if (cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || 
+      cmdLower.includes('gene') || cmdLower.includes('r-loop') || cmdLower.includes('hdr') || 
+      cmdLower.includes('nhej') || cmdLower.includes('chromatin') || cmdLower.includes('dna') || 
+      cmdLower.includes('protein') || cmdLower.includes('p53') || cmdLower.includes('folding') || 
+      cmdLower.includes('biology')) {
+    domain = 'BIOLOGY';
+  } else if (cmdLower.includes('fea') || cmdLower.includes('topology') || cmdLower.includes('beam') || 
+             cmdLower.includes('structural') || cmdLower.includes('cantilever') || cmdLower.includes('geotechnical') || 
+             cmdLower.includes('soil') || cmdLower.includes('engineering')) {
+    domain = 'ENGINEERING';
+  } else if (cmdLower.includes('plasma') || cmdLower.includes('tokamak') || cmdLower.includes('fusion') || 
+             cmdLower.includes('magnetic') || cmdLower.includes('physics')) {
+    domain = 'PHYSICS';
+  } else if (cmdLower.includes('neural') || cmdLower.includes('learning') || cmdLower.includes('loss') || 
+             cmdLower.includes('transformer') || cmdLower.includes('ai') || cmdLower.includes('qubit')) {
+    domain = 'AI';
+  } else {
+    domain = engine.activeDomain;
+  }
 
   let baseStates;
   if (domain === 'ENGINEERING') {
@@ -140,7 +213,12 @@ const runHeuristicResolution = (cmd: string): ResolutionData => {
   } else if (domain === 'PHYSICS') {
     baseStates = [ { label: 'P0_Stable_Plasma', metrics: [{name: 'Energy', value: 10.0, unit: 'keV'}, {name: 'Confinement Time', value: 5.0, unit: 's'}] }, { label: 'P1_Instability_Growth', metrics: [{name: 'Energy', value: 8.0, unit: 'keV'}, {name: 'Confinement Time', value: 2.0, unit: 's'}] } ];
   } else {
-    baseStates = [ { label: 'S0_Sovereign_Attractor', metrics: [{name: 'Energy', value: -7.5, unit: 'kcal/mol'}, {name: 'RMSD', value: 0.08, unit: 'Å'}] }, { label: 'S1_Intermediate_Lapsed', metrics: [{name: 'Energy', value: 2.5, unit: 'kcal/mol'}, {name: 'RMSD', value: 1.9, unit: 'Å'}] } ];
+    const isCrispr = cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || cmdLower.includes('r-loop');
+    if (isCrispr) {
+      baseStates = [ { label: 'S0_PAM_Interrogation_Locked', metrics: [{name: 'Association Rate (kon)', value: '1.42e6', unit: 'mM/s'}, {name: 'Binding Free Energy', value: '-11.8', unit: 'kcal/mol'}] }, { label: 'S1_Catalytic_R_Loop_Cleavage', metrics: [{name: 'Cleavage Rate (kcat)', value: '0.85', unit: 'Hz'}, {name: 'R-Loop Length', value: '20.0', unit: 'Å'}] } ];
+    } else {
+      baseStates = [ { label: 'S0_Sovereign_Attractor', metrics: [{name: 'Energy', value: -7.5, unit: 'kcal/mol'}, {name: 'RMSD', value: 0.08, unit: 'Å'}] }, { label: 'S1_Intermediate_Lapsed', metrics: [{name: 'Energy', value: 2.5, unit: 'kcal/mol'}, {name: 'RMSD', value: 1.9, unit: 'Å'}] } ];
+    }
   }
 
   return {
@@ -165,6 +243,7 @@ app.post('/api/agent/telemetry', (req, res) => {
   const { logs, computedMetrics } = req.body;
   if (logs) {
       engine.logs = [...logs, ...engine.logs].slice(0, 50);
+      saveLocalStorage();
   }
   res.json({ success: true });
 });
@@ -184,7 +263,44 @@ app.post('/api/agent/toggle', (req, res) => {
 
 app.post('/api/agent/state', (req, res) => {
   engine = { ...engine, ...req.body };
+  saveLocalStorage();
   res.json({ success: true });
+});
+
+app.post('/api/agent/sync-storage', (req, res) => {
+  const { terminalHistory, logs, objectives } = req.body;
+  let changed = false;
+
+  if (Array.isArray(terminalHistory) && terminalHistory.length > 0) {
+    const existingIds = new Set(engine.terminalHistory.map(h => h.id));
+    const newItems = terminalHistory.filter(h => !existingIds.has(h.id));
+    if (newItems.length > 0) {
+      engine.terminalHistory = [...engine.terminalHistory, ...newItems].sort((a, b) => {
+        return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+      });
+      changed = true;
+    }
+  }
+
+  if (Array.isArray(logs) && logs.length > 0) {
+    const existingLogs = new Set(engine.logs);
+    const newLogs = logs.filter(l => !existingLogs.has(l));
+    if (newLogs.length > 0) {
+      engine.logs = [...newLogs, ...engine.logs].slice(0, 100);
+      changed = true;
+    }
+  }
+
+  if (Array.isArray(objectives) && objectives.length > 0 && engine.objectives.length === 0) {
+    engine.objectives = objectives;
+    changed = true;
+  }
+
+  if (changed) {
+    saveLocalStorage();
+  }
+
+  res.json({ success: true, engine });
 });
 
 app.post('/api/agent/commands', async (req, res) => {
@@ -208,6 +324,7 @@ app.post('/api/agent/commands', async (req, res) => {
   engine.activeEntityId = newActiveEntityId;
   engine.terminalHistory = [resEntry, ...engine.terminalHistory];
   engine.logs.unshift(`[HEURISTIC] Instant resolution committed. Domain: ${targetDomain}`);
+  saveLocalStorage();
 
   res.json({ success: true, targetDomain, heuristicResult });
 
@@ -216,7 +333,7 @@ app.post('/api/agent/commands', async (req, res) => {
     const pendingResolution = engine.terminalHistory.find(h => h.id === resEntry.id);
     let finalResult: ResolutionData;
     
-    if (command.startsWith('DATA:') || command.length > 50) {
+    if (command.startsWith('DATA:')) {
       finalResult = await compileDeterministicData(command, heuristicResult);
     } else {
       finalResult = await generateDeterministicCode(command, {
@@ -233,10 +350,12 @@ app.post('/api/agent/commands', async (req, res) => {
         status: finalResult.status
       };
       engine.logs.unshift(`[BRIDGE] Deterministic logic synchronized.`);
+      saveLocalStorage();
     }
   } catch (error: any) {
     console.error("Delayed error:", error);
     engine.logs.unshift(`[ERROR] Deterministic bridge failed.`);
+    saveLocalStorage();
   }
 });
 
@@ -273,22 +392,29 @@ if __name__ == "__main__":
 });
 
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  const distPath = path.join(process.cwd(), 'dist');
+  const distIndexExists = fs.existsSync(path.join(distPath, 'index.html'));
+
+  if (process.env.NODE_ENV !== "production" && !distIndexExists) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.use((req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  });
+
+  server.on('error', (err: any) => {
+    console.error('Server listen error:', err);
   });
 }
 
