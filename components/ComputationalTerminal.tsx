@@ -63,7 +63,9 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
 
   const copyToClipboard = async (id: string, data: ResolutionData) => {
     const formattedText = `
---- AETHERIS PROTOTYPE CALCULATION REPORT (NOT SCIENTIFICALLY VALIDATED) ---
+--- AETHERIS CALCULATION REPORT ---
+RESULT CLASS: ${data.resultClass ?? 'illustrative'}
+METHOD: ${data.method ?? 'legacy-prototype'}
 SUMMARY: ${data.summary}
 STATES:
 ${data.states.map(s => {
