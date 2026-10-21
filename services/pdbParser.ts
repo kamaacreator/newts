@@ -54,9 +54,9 @@ export function parsePdbCaAtoms(pdbText: string): PdbCaAtom[] {
     const xText = line.slice(30, 38).trim();
     const yText = line.slice(38, 46).trim();
     const zText = line.slice(46, 54).trim();
-    const coordinatePattern = /^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$/;
+    const coordinatePattern = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
     if (
-      !/^[+-]?\\d+$/.test(residueNumberText) ||
+      !/^[+-]?\d+$/.test(residueNumberText) ||
       !coordinatePattern.test(xText) ||
       !coordinatePattern.test(yText) ||
       !coordinatePattern.test(zText)
