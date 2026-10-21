@@ -12,7 +12,8 @@ import {
   Download, 
   Eye, 
   EyeOff,
-  Sparkles
+  Sparkles,
+  Upload
 } from 'lucide-react';
 
 interface ComputationalTerminalProps {
@@ -20,18 +21,21 @@ interface ComputationalTerminalProps {
   onCommand: (cmd: string) => void;
   onClear: () => void;
   isResolving: boolean;
+  onStructureFile: (file: File) => void;
 }
 
 const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({ 
   history, 
   onCommand, 
-  isResolving 
+  isResolving,
+  onStructureFile,
 }) => {
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<'all' | 'latest'>('all');
-  const scrollRef = useRef<HTMLDivElement>(null);\n  const structureFileRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const structureFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
