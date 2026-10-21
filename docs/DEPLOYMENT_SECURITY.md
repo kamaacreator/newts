@@ -21,7 +21,7 @@ Development mode bypasses login for local development only. Do not deploy with `
 
 ## Remaining hardening work
 
-Failed login attempts are now rate-limited per observed client IP: five failures trigger a 15-minute block. The limiter is process-local and bounded; use a shared store and validate trusted-proxy configuration before running multiple instances. This first authentication layer is still single-operator and stateless. Before a multi-user or regulated deployment, add account lifecycle management, password hashing backed by a user store, audit events, secret rotation and revocation, CSRF integration tests, session revocation, and deployment-specific reverse-proxy validation. Run an external security review before production release.
+Failed login attempts are now rate-limited per observed client IP: five failures trigger a 15-minute block. The limiter is process-local and bounded; use a shared store and validate trusted-proxy configuration before running multiple instances. This first authentication layer is still single-operator and stores active sessions in process memory; a process restart revokes all sessions, and multiple instances will not share session state. Before a multi-user or regulated deployment, add account lifecycle management, password hashing backed by a user store, audit events, secret rotation, a shared session store, CSRF integration tests, and deployment-specific reverse-proxy validation. Run an external security review before production release.
 
 ## Repository-history caution
 
