@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { GlobalObjective } from '../types';
+import { Radio, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface ObjectiveHubProps {
   objectives: GlobalObjective[];
@@ -39,12 +39,12 @@ const ObjectiveHub: React.FC<ObjectiveHubProps> = ({ objectives, onAdd, systemLo
             Systems Response Terminal // Objective_Plane
           </h3>
         </div>
-        <div className="flex gap-4 text-[8px] mono text-slate-500 items-center">
-          <span className="flex items-center gap-1">
-            <i className="fa-solid fa-satellite-dish text-emerald-500/50"></i>
+        <div className="flex gap-4 text-[8px] mono text-slate-400 items-center">
+          <span className="flex items-center gap-1 text-emerald-400">
+            <Radio size={10} className="text-emerald-400 animate-pulse" />
             TELEMETRY: ACTIVE
           </span>
-          <span className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded border border-emerald-500/20">
+          <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
             FIELD_SYNC: OK
           </span>
         </div>
@@ -58,15 +58,15 @@ const ObjectiveHub: React.FC<ObjectiveHubProps> = ({ objectives, onAdd, systemLo
             className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar scroll-smooth"
           >
             {systemLogs.map((log, idx) => (
-              <div key={idx} className="flex gap-2 text-[9px] mono items-start animate-in fade-in slide-in-from-left-2 duration-300">
-                <span className="text-slate-600 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}]</span>
-                <span className={`${log.includes('[SYSTEM]') ? 'text-cyan-400' : log.includes('[COMMIT]') ? 'text-emerald-400' : 'text-slate-400'}`}>
+              <div key={idx} className="flex gap-2 text-[9px] mono items-start">
+                <span className="text-slate-500 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}]</span>
+                <span className={`${log.includes('[MATH]') ? 'text-emerald-300 font-bold' : log.includes('[CMD]') ? 'text-cyan-300' : log.includes('[COMMIT]') ? 'text-emerald-400' : 'text-slate-400'}`}>
                   {log}
                 </span>
               </div>
             ))}
             {systemLogs.length === 0 && (
-              <div className="h-full flex items-center justify-center opacity-10">
+              <div className="h-full flex items-center justify-center opacity-20">
                 <span className="text-[10px] mono">ESTABLISHING STREAM...</span>
               </div>
             )}
@@ -76,7 +76,7 @@ const ObjectiveHub: React.FC<ObjectiveHubProps> = ({ objectives, onAdd, systemLo
         {/* Right Pane: Priorities */}
         <div className="flex-1 flex flex-col bg-black/20">
           <div className="px-3 py-1.5 border-b border-slate-800/50 bg-slate-900/30">
-            <span className="text-[8px] font-bold uppercase text-slate-500 tracking-tighter mono">Active Priorities</span>
+            <span className="text-[8px] font-bold uppercase text-slate-400 tracking-tighter mono font-bold">Active Priorities</span>
           </div>
           <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
             {objectives.map(obj => (
@@ -107,15 +107,16 @@ const ObjectiveHub: React.FC<ObjectiveHubProps> = ({ objectives, onAdd, systemLo
             type="text" 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if(e.key === 'Enter') handleAdd(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
             placeholder=""
             className="w-full bg-slate-900/40 border border-slate-800/80 rounded-lg py-1.5 pl-24 pr-10 text-[10px] mono text-emerald-400 outline-none focus:border-emerald-500/30 focus:bg-slate-900/60 transition-all shadow-inner"
           />
           <button 
             onClick={handleAdd}
             className="absolute right-1 top-1 bottom-1 px-3 bg-emerald-600/10 text-emerald-400 rounded-md hover:bg-emerald-600/20 border border-emerald-600/20 transition-all flex items-center justify-center"
+            title="Inject Priority"
           >
-            <i className="fa-solid fa-arrow-right-to-bracket text-[10px]"></i>
+            <ArrowRight size={12} />
           </button>
         </div>
       </div>

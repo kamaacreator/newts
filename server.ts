@@ -129,7 +129,9 @@ function saveLocalStorage() {
       activeDomain: engine.activeDomain,
       savedAt: new Date().toISOString()
     };
-    fs.writeFileSync(STORAGE_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    const tmpFile = `${STORAGE_FILE}.tmp`;
+    fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tmpFile, STORAGE_FILE);
   } catch (err) {
     console.error('[STORAGE] Error saving local storage:', err);
   }
@@ -179,59 +181,34 @@ const runStep = () => {
     engine.logs = newLogs.slice(0, 50);
 };
 
-const runHeuristicResolution = (cmd: string): ResolutionData => {
-  const activeEntity = engine.entities.find(e => e.id === engine.activeEntityId);
-  const cmdLower = cmd.toLowerCase();
-  
-  // Strict domain classifier isolated from conversation history
-  let domain: ScientificDomain = 'BIOLOGY';
-  if (cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || 
-      cmdLower.includes('gene') || cmdLower.includes('r-loop') || cmdLower.includes('hdr') || 
-      cmdLower.includes('nhej') || cmdLower.includes('chromatin') || cmdLower.includes('dna') || 
-      cmdLower.includes('protein') || cmdLower.includes('p53') || cmdLower.includes('folding') || 
-      cmdLower.includes('biology')) {
-    domain = 'BIOLOGY';
-  } else if (cmdLower.includes('fea') || cmdLower.includes('topology') || cmdLower.includes('beam') || 
-             cmdLower.includes('structural') || cmdLower.includes('cantilever') || cmdLower.includes('geotechnical') || 
-             cmdLower.includes('soil') || cmdLower.includes('engineering')) {
-    domain = 'ENGINEERING';
-  } else if (cmdLower.includes('plasma') || cmdLower.includes('tokamak') || cmdLower.includes('fusion') || 
-             cmdLower.includes('magnetic') || cmdLower.includes('physics')) {
-    domain = 'PHYSICS';
-  } else if (cmdLower.includes('neural') || cmdLower.includes('learning') || cmdLower.includes('loss') || 
-             cmdLower.includes('transformer') || cmdLower.includes('ai') || cmdLower.includes('qubit')) {
-    domain = 'AI';
-  } else {
-    domain = engine.activeDomain;
-  }
+const updateEntitiesFromEnvironment = () => {
+  const temp = engine.globalEnv.temperature;
+  const zn = engine.globalEnv.znConcentration;
 
-  let baseStates;
-  if (domain === 'ENGINEERING') {
-    baseStates = [ { label: 'S0_Optimized_Topology', metrics: [{name: 'Compliance', value: 0.12, unit: 'Joules'}, {name: 'Volume Fraction', value: 40.0, unit: '%'}] }, { label: 'S1_Initial_Mesh', metrics: [{name: 'Compliance', value: 1.45, unit: 'Joules'}, {name: 'Volume Fraction', value: 100.0, unit: '%'}] } ];
-  } else if (domain === 'AI') {
-    baseStates = [ { label: 'AI0_Global_Minimum', metrics: [{name: 'Loss', value: 0.05, unit: 'nats'}, {name: 'Accuracy', value: 99.5, unit: '%'}] }, { label: 'AI1_Local_Optima', metrics: [{name: 'Loss', value: 0.8, unit: 'nats'}, {name: 'Accuracy', value: 85.0, unit: '%'}] } ];
-  } else if (domain === 'PHYSICS') {
-    baseStates = [ { label: 'P0_Stable_Plasma', metrics: [{name: 'Energy', value: 10.0, unit: 'keV'}, {name: 'Confinement Time', value: 5.0, unit: 's'}] }, { label: 'P1_Instability_Growth', metrics: [{name: 'Energy', value: 8.0, unit: 'keV'}, {name: 'Confinement Time', value: 2.0, unit: 's'}] } ];
-  } else {
-    const isCrispr = cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || cmdLower.includes('r-loop');
-    if (isCrispr) {
-      baseStates = [ { label: 'S0_PAM_Interrogation_Locked', metrics: [{name: 'Association Rate (kon)', value: '1.42e6', unit: 'mM/s'}, {name: 'Binding Free Energy', value: '-11.8', unit: 'kcal/mol'}] }, { label: 'S1_Catalytic_R_Loop_Cleavage', metrics: [{name: 'Cleavage Rate (kcat)', value: '0.85', unit: 'Hz'}, {name: 'R-Loop Length', value: '20.0', unit: 'Å'}] } ];
-    } else {
-      baseStates = [ { label: 'S0_Sovereign_Attractor', metrics: [{name: 'Energy', value: -7.5, unit: 'kcal/mol'}, {name: 'RMSD', value: 0.08, unit: 'Å'}] }, { label: 'S1_Intermediate_Lapsed', metrics: [{name: 'Energy', value: 2.5, unit: 'kcal/mol'}, {name: 'RMSD', value: 1.9, unit: 'Å'}] } ];
-    }
-  }
+  // Coupling for p53-sovereign in Biology
+  const p53 = engine.entities.find(e => e.id === 'p53-sovereign');
+  if (p53) {
+    const dG_hydrophobic = -9.825;
+    const dG_zn = -3.8 * Math.min(1.0, zn);
+    const dG_entropy = 0.018 * 393 * ((temp + 273.15) / 298.15);
+    const thermal = temp > 42 ? 0.35 * Math.pow(temp - 42, 1.5) : 0;
+    const total_dG = dG_hydrophobic + dG_zn + dG_entropy + thermal;
+    
+    const rmsd = total_dG < -6.0 ? 0.08 : (total_dG < -2.0 ? 0.85 : 1.92 + (temp > 42 ? 0.05 * (temp - 42) : 0));
+    const stability = Math.max(0.0001, Math.min(0.9999999, 1.0 / (1.0 + Math.exp(total_dG + 4.5))));
+    const aggregationPropensity = zn < 0.4 
+      ? Math.min(0.99, (0.4 - zn) * 1.5 + (temp > 42 ? 0.4 : 0.05))
+      : (temp > 45 ? 0.75 : 0.000000001);
 
-  return {
-    status: 'PENDING_COMPUTATION',
-    states: baseStates,
-    transitions: [
-      { from: 'S_Any', to: baseStates[0].label, probability: '[NULL - AWAITING COMPUTATION]' }
-    ],
-    summary: `[HEURISTIC] Instant manifold resolution at T=${engine.logicalTime}. Pending Deep Deterministic Verification.`,
-    deterministicSteps: ['Orchestrating Deterministic Bridge...'],
-    deterministicCode: '# [BRIDGE_ACTIVE] GENERATING COMPLETE MATHEMATICAL LOGIC...',
-    envSnapshot: { temp: engine.globalEnv.temperature, zn: engine.globalEnv.znConcentration, agg: 0 }
-  };
+    p53.metrics = {
+      ...p53.metrics,
+      gibbsFreeEnergy: total_dG,
+      rmsd,
+      stability,
+      aggregationPropensity
+    };
+    p53.currentPosition.energy = total_dG;
+  }
 };
 
 app.get('/api/agent/telemetry', (req, res) => {
@@ -239,9 +216,8 @@ app.get('/api/agent/telemetry', (req, res) => {
 });
 
 app.post('/api/agent/telemetry', (req, res) => {
-  // Update state from incoming python logic
-  const { logs, computedMetrics } = req.body;
-  if (logs) {
+  const { logs } = req.body;
+  if (logs && Array.isArray(logs)) {
       engine.logs = [...logs, ...engine.logs].slice(0, 50);
       saveLocalStorage();
   }
@@ -263,8 +239,11 @@ app.post('/api/agent/toggle', (req, res) => {
 
 app.post('/api/agent/state', (req, res) => {
   engine = { ...engine, ...req.body };
+  if (req.body.globalEnv) {
+    updateEntitiesFromEnvironment();
+  }
   saveLocalStorage();
-  res.json({ success: true });
+  res.json({ success: true, engine });
 });
 
 app.post('/api/agent/sync-storage', (req, res) => {
@@ -272,13 +251,17 @@ app.post('/api/agent/sync-storage', (req, res) => {
   let changed = false;
 
   if (Array.isArray(terminalHistory) && terminalHistory.length > 0) {
-    const existingIds = new Set(engine.terminalHistory.map(h => h.id));
-    const newItems = terminalHistory.filter(h => !existingIds.has(h.id));
-    if (newItems.length > 0) {
-      engine.terminalHistory = [...engine.terminalHistory, ...newItems].sort((a, b) => {
+    const existingMap = new Map(engine.terminalHistory.map(h => [h.id, h]));
+    for (const item of terminalHistory) {
+      if (!existingMap.has(item.id)) {
+        existingMap.set(item.id, item);
+        changed = true;
+      }
+    }
+    if (changed) {
+      engine.terminalHistory = Array.from(existingMap.values()).sort((a, b) => {
         return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
       });
-      changed = true;
     }
   }
 
@@ -305,58 +288,121 @@ app.post('/api/agent/sync-storage', (req, res) => {
 
 app.post('/api/agent/commands', async (req, res) => {
   const { command } = req.body;
-  const entry: TerminalEntry = { id: Date.now().toString(), type: 'COMMAND', content: command, timestamp: new Date() };
-  
-  engine.terminalHistory = [entry, ...engine.terminalHistory];
-  engine.logs.unshift(`[CMD] Execution request: ${command}`);
+  if (!command || typeof command !== 'string' || !command.trim()) {
+    return res.status(400).json({ error: 'Command cannot be empty' });
+  }
 
-  const heuristicResult = runHeuristicResolution(command);
-  const resEntry: TerminalEntry = { id: (Date.now() + 1).toString(), type: 'RESOLUTION', content: heuristicResult, timestamp: new Date() };
-  
-  const pm = heuristicResult.states[0]?.metrics?.[0]?.name;
-  const targetDomain: ScientificDomain = pm === 'Compliance' ? 'ENGINEERING' : (pm === 'Loss' ? 'AI' : (pm === 'Energy' && heuristicResult.states[0]?.metrics?.[0]?.unit === 'keV' ? 'PHYSICS' : 'BIOLOGY'));
-  
+  const cleanCmd = command.trim();
+  const entryId = Date.now().toString();
+  const entry: TerminalEntry = { id: entryId, type: 'COMMAND', content: cleanCmd, timestamp: new Date() };
+
+  // Detect domain
+  const cmdLower = cleanCmd.toLowerCase();
+  let targetDomain: ScientificDomain = engine.activeDomain;
+  if (
+    cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || 
+    cmdLower.includes('gene') || cmdLower.includes('r-loop') || cmdLower.includes('hdr') || 
+    cmdLower.includes('nhej') || cmdLower.includes('chromatin') || cmdLower.includes('dna') || 
+    cmdLower.includes('protein') || cmdLower.includes('p53') || cmdLower.includes('folding') || 
+    cmdLower.includes('trp-cage') || cmdLower.includes('biology')
+  ) {
+    targetDomain = 'BIOLOGY';
+  } else if (
+    cmdLower.includes('fea') || cmdLower.includes('cantilever') || cmdLower.includes('beam') || 
+    cmdLower.includes('structural') || cmdLower.includes('geotechnical') || cmdLower.includes('soil') || 
+    cmdLower.includes('stress') || cmdLower.includes('topology') || cmdLower.includes('simp') || 
+    cmdLower.includes('engineering')
+  ) {
+    targetDomain = 'ENGINEERING';
+  } else if (
+    cmdLower.includes('plasma') || cmdLower.includes('tokamak') || cmdLower.includes('magnetic') || 
+    cmdLower.includes('fusion') || cmdLower.includes('confinement') || cmdLower.includes('troyon') || 
+    cmdLower.includes('physics')
+  ) {
+    targetDomain = 'PHYSICS';
+  } else if (
+    cmdLower.includes('neural') || cmdLower.includes('gradient') || cmdLower.includes('loss') || 
+    cmdLower.includes('learning') || cmdLower.includes('transformer') || cmdLower.includes('attention') || 
+    cmdLower.includes('nats') || cmdLower.includes('ai') || cmdLower.includes('qubit') ||
+    cmdLower.includes('entropy')
+  ) {
+    targetDomain = 'AI';
+  }
+
   const newActiveEntityId = (targetDomain !== engine.activeDomain) 
     ? (engine.entities.find(e => e.identity.domain === targetDomain)?.id || engine.activeEntityId)
     : engine.activeEntityId;
 
   engine.activeDomain = targetDomain;
   engine.activeEntityId = newActiveEntityId;
-  engine.terminalHistory = [resEntry, ...engine.terminalHistory];
-  engine.logs.unshift(`[HEURISTIC] Instant resolution committed. Domain: ${targetDomain}`);
+
+  // Execute REAL deterministic mathematical calculation synchronously
+  let finalResult: ResolutionData;
+  if (cleanCmd.startsWith('DATA:')) {
+    finalResult = await compileDeterministicData(cleanCmd, {
+      status: 'RESOLVED',
+      states: [],
+      summary: 'Data compiled'
+    });
+  } else {
+    finalResult = await generateDeterministicCode(cleanCmd, {
+      activeEntityId: newActiveEntityId,
+      activeDomain: targetDomain,
+      globalEnv: engine.globalEnv,
+      logicalTime: engine.logicalTime
+    });
+  }
+
+  const resId = (Date.now() + 1).toString();
+  const resEntry: TerminalEntry = { id: resId, type: 'RESOLUTION', content: finalResult, timestamp: new Date() };
+
+  // Update entity metrics directly from real deterministic calculation
+  const activeEntity = engine.entities.find(e => e.id === newActiveEntityId);
+  if (activeEntity && finalResult.states.length > 0) {
+    const s0 = finalResult.states[0];
+    const s0Metrics = s0.metrics;
+    if (targetDomain === 'BIOLOGY') {
+      const dG = parseFloat(s0Metrics.find(m => m.name.includes('Free Energy'))?.value as string) || activeEntity.metrics.gibbsFreeEnergy;
+      const rmsd = parseFloat(s0Metrics.find(m => m.name.includes('RMSD'))?.value as string) || activeEntity.metrics.rmsd;
+      activeEntity.metrics.gibbsFreeEnergy = dG;
+      activeEntity.metrics.rmsd = rmsd;
+      activeEntity.currentPosition.energy = dG;
+    } else if (targetDomain === 'ENGINEERING') {
+      const comp = parseFloat(s0Metrics.find(m => m.name === 'Compliance')?.value as string) || 0.12;
+      activeEntity.metrics.gibbsFreeEnergy = comp;
+      activeEntity.currentPosition.energy = comp;
+    } else if (targetDomain === 'PHYSICS') {
+      const conf = parseFloat(s0Metrics.find(m => m.name === 'Confinement Time')?.value as string) || 4.8;
+      activeEntity.properties.confinementTime = conf;
+    }
+  }
+
+  engine.terminalHistory = [resEntry, entry, ...engine.terminalHistory];
+  engine.logs.unshift(`[MATH] Real deterministic resolution executed. Domain: ${targetDomain}`);
+  engine.logs.unshift(`[CMD] Execution request: ${cleanCmd}`);
+  engine.logicalTime += 1;
+
   saveLocalStorage();
 
-  res.json({ success: true, targetDomain, heuristicResult });
+  res.json({ 
+    success: true, 
+    targetDomain, 
+    finalResult,
+    engine 
+  });
+});
 
-  // Async Bridge Trigger
-  try {
-    const pendingResolution = engine.terminalHistory.find(h => h.id === resEntry.id);
-    let finalResult: ResolutionData;
-    
-    if (command.startsWith('DATA:')) {
-      finalResult = await compileDeterministicData(command, heuristicResult);
-    } else {
-      finalResult = await generateDeterministicCode(command, {
-        activeEntityId: newActiveEntityId,
-        activeDomain: targetDomain,
-        globalEnv: engine.globalEnv,
-        logicalTime: engine.logicalTime
-      });
-    }
-
-    if (pendingResolution) {
-      pendingResolution.content = {
-        ...finalResult,
-        status: finalResult.status
-      };
-      engine.logs.unshift(`[BRIDGE] Deterministic logic synchronized.`);
-      saveLocalStorage();
-    }
-  } catch (error: any) {
-    console.error("Delayed error:", error);
-    engine.logs.unshift(`[ERROR] Deterministic bridge failed.`);
-    saveLocalStorage();
-  }
+app.get('/api/agent/export', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', 'attachment; filename="aetheris_local_storage_export.json"');
+  res.send(JSON.stringify({
+    terminalHistory: engine.terminalHistory,
+    logs: engine.logs,
+    objectives: engine.objectives,
+    globalEnv: engine.globalEnv,
+    entities: engine.entities,
+    exportedAt: new Date().toISOString()
+  }, null, 2));
 });
 
 app.get('/api/agent/script', (req, res) => {
@@ -393,20 +439,23 @@ if __name__ == "__main__":
 
 async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');
-  const distIndexExists = fs.existsSync(path.join(distPath, 'index.html'));
+  const distIndexPath = path.join(distPath, 'index.html');
 
-  if (process.env.NODE_ENV !== "production" && !distIndexExists) {
+  if (fs.existsSync(distIndexPath)) {
+    app.use(express.static(distPath));
+    app.use((req, res, next) => {
+      if (req.path.startsWith('/api')) {
+        return next();
+      }
+      res.sendFile(distIndexPath);
+    });
+  } else {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    app.use(express.static(distPath));
-    app.use((req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
   }
 
   const server = app.listen(PORT, "0.0.0.0", () => {

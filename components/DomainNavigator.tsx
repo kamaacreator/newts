@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { ScientificDomain } from '../types';
+import { Dna, Atom, Compass, Brain } from 'lucide-react';
 
 interface DomainNavigatorProps {
   activeDomain: ScientificDomain;
@@ -8,35 +8,33 @@ interface DomainNavigatorProps {
 }
 
 const DomainNavigator: React.FC<DomainNavigatorProps> = ({ activeDomain, onDomainChange }) => {
-  const domains: { id: ScientificDomain; label: string; icon: string; color: string }[] = [
-    { id: 'BIOLOGY', label: 'Biology', icon: 'fa-dna', color: 'text-emerald-400' },
-    { id: 'PHYSICS', label: 'Physics', icon: 'fa-atom', color: 'text-pink-400' },
-    { id: 'ENGINEERING', label: 'Engineering', icon: 'fa-bridge', color: 'text-blue-400' },
-    { id: 'AI', label: 'Intelligence', icon: 'fa-brain', color: 'text-purple-400' }
+  const domains: { id: ScientificDomain; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; color: string }[] = [
+    { id: 'BIOLOGY', label: 'Biology', icon: Dna, color: 'text-emerald-400' },
+    { id: 'PHYSICS', label: 'Physics', icon: Atom, color: 'text-pink-400' },
+    { id: 'ENGINEERING', label: 'Engineering', icon: Compass, color: 'text-blue-400' },
+    { id: 'AI', label: 'AI Intelligence', icon: Brain, color: 'text-purple-400' }
   ];
 
   return (
-    <div className="px-6 py-2 flex items-center gap-2 border-b border-white/5">
-      {domains.map((d) => (
-        <button
-          key={d.id}
-          onClick={() => onDomainChange(d.id)}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all border ${
-            activeDomain === d.id 
-              ? 'bg-white/5 border-white/20' 
-              : 'border-transparent hover:bg-white/5 opacity-50 hover:opacity-100'
-          }`}
-        >
-          <i className={`fa-solid ${d.icon} ${activeDomain === d.id ? d.color : 'text-gray-500'}`}></i>
-          <span className={`text-[10px] font-bold uppercase tracking-widest ${activeDomain === d.id ? 'text-white' : 'text-gray-500'}`}>
-            {d.label}
-          </span>
-        </button>
-      ))}
-      <div className="flex-1"></div>
-      <div className="text-[10px] mono text-gray-600 bg-white/5 px-2 py-1 rounded">
-        DOMAIN_PIVOT_ENABLED: TRUE
-      </div>
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      {domains.map((d) => {
+        const Icon = d.icon;
+        const isActive = activeDomain === d.id;
+        return (
+          <button
+            key={d.id}
+            onClick={() => onDomainChange(d.id)}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 sm:gap-2 transition-all border text-[9px] sm:text-[10px] font-bold uppercase tracking-wider mono ${
+              isActive 
+                ? 'bg-slate-800/80 border-slate-700 text-white shadow-sm' 
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            <Icon size={12} className={isActive ? d.color : 'text-slate-500'} />
+            <span>{d.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 };
