@@ -4,6 +4,7 @@ import fs from 'fs';
 import { EngineMode } from './types.ts';
 import type { EngineState, GlobalObjective, UniversalStateObject, TerminalEntry, ResolutionData, ScientificDomain } from './types.ts';
 import { generateDeterministicCode, compileDeterministicData } from './services/geminiService.ts';
+import { calculateProteinSequenceFeatures } from './services/proteinSequence.ts';
 
 const app = express();
 // Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
@@ -357,9 +358,38 @@ app.post('/api/agent/commands', async (req, res) => {
   engine.activeDomain = targetDomain;
   engine.activeEntityId = newActiveEntityId;
 
-  // Execute REAL deterministic mathematical calculation synchronously
+  // Execute the selected calculation path synchronously; method and limitations are returned with results.
   let finalResult: ResolutionData;
-  if (cleanCmd.startsWith('DATA:')) {
+  if (cleanCmd.toUpperCase().startsWith('SEQUENCE:')) {
+    try {
+      const features = calculateProteinSequenceFeatures(cleanCmd.slice(cleanCmd.indexOf(':') + 1));
+      finalResult = {
+        status: 'RESOLVED',
+        summary: `Computed primary-sequence features for ${features.sequenceLength} residues using ${features.method}. This is not a folding or structure-prediction result.`,
+        states: [{
+          label: 'Primary Sequence Features',
+          metrics: [
+            { name: 'Sequence Length', value: features.sequenceLength, unit: 'residues' },
+            { name: 'Average Molecular Mass', value: features.molecularMassDa, unit: 'Da' },
+            { name: 'GRAVY Hydropathy', value: features.gravy, unit: 'Kyte-Doolittle score' },
+            { name: 'Theoretical Isoelectric Point', value: features.theoreticalPi, unit: 'pH (estimated)' },
+            ...Object.entries(features.composition).filter(([, count]) => count > 0).map(([aa, count]) => ({
+              name: `Residue ${aa}`, value: count, unit: 'residues'
+            }))
+          ]
+        }],
+        deterministicSteps: [
+          '1. Normalize FASTA/plain-text sequence and validate standard amino-acid symbols.',
+          '2. Compute composition and average molecular mass from residue masses plus terminal water.',
+          '3. Compute Kyte–Doolittle GRAVY as the arithmetic mean of residue hydropathy.',
+          '4. Estimate theoretical pI by bisection on Henderson–Hasselbalch charge balance.',
+          ...features.limitations.map((limitation) => `Limitation: ${limitation}`)
+        ]
+      };
+    } catch (error) {
+      return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid protein sequence' });
+    }
+  } else if (cleanCmd.startsWith('DATA:')) {
     finalResult = await compileDeterministicData(cleanCmd, {
       status: 'RESOLVED',
       states: [],
@@ -399,7 +429,7 @@ app.post('/api/agent/commands', async (req, res) => {
   }
 
   engine.terminalHistory = [resEntry, entry, ...engine.terminalHistory];
-  engine.logs.unshift(`[MATH] Real deterministic resolution executed. Domain: ${targetDomain}`);
+  engine.logs.unshift(`[COMPUTATION] Calculation path completed. Domain: ${targetDomain}`);
   engine.logs.unshift(`[CMD] Execution request: ${cleanCmd}`);
   engine.logicalTime += 1;
 
