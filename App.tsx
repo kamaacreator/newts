@@ -1,6 +1,6 @@
 // App.tsx
 import React, { useState, useEffect } from 'react';
-import { EngineState, GlobalObjective } from './types';
+import { EngineState, GlobalObjective, TerminalEntry } from './types';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import StateGraph from './components/StateGraph';
@@ -175,6 +175,46 @@ const App: React.FC = () => {
       }
     } catch (err) {
       console.error('Command execution error:', err);
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
+  const handleStructureFile = async (file: File) => {
+    const addLocalError = (message: string) => {
+      const entry: TerminalEntry = {
+        id: `pdb-error-${Date.now()}`,
+        type: 'ERROR',
+        content: message,
+        timestamp: new Date(),
+      };
+      setEngine((prev) => prev ? { ...prev, terminalHistory: [entry, ...prev.terminalHistory] } : prev);
+    };
+
+    if (file.size > 2_000_000) {
+      addLocalError('PDB file exceeds the 2 MB upload limit.');
+      return;
+    }
+
+    setIsResolving(true);
+    try {
+      const pdbText = await file.text();
+      const response = await fetch('/api/agent/protein/structure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ pdbText }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'PDB analysis failed');
+      if (data?.engine) {
+        setEngine(data.engine);
+        try {
+          localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(data.engine.terminalHistory));
+        } catch {}
+      }
+    } catch (error) {
+      addLocalError(error instanceof Error ? error.message : 'PDB analysis failed');
     } finally {
       setIsResolving(false);
     }
@@ -359,7 +399,8 @@ const App: React.FC = () => {
                     history={engine.terminalHistory} 
                     onCommand={handleTerminalCommand} 
                     onClear={() => {}}
-                    isResolving={isResolving} 
+                    isResolving={isResolving}
+                    onStructureFile={handleStructureFile}
                   />
                 </div>
                 <div className="flex-1 glass rounded-2xl p-4 flex flex-col justify-center bg-slate-900/40 border-slate-800 hidden md:flex">
