@@ -42,7 +42,7 @@ Production Aetheris requires HTTPS for the provider endpoint; place the service 
 ## Endpoints
 
 - `GET /healthz`: process liveness only.
-- `GET /readyz`: reports whether model weights have loaded; returns 503 until the first inference has loaded the model.
+- `GET /readyz`: reports whether model weights have loaded; returns 503 until the model is ready. The Docker image sets `FOLDING_EAGER_LOAD=1` so it loads weights before accepting traffic. For unit tests or local development, set `FOLDING_EAGER_LOAD=0` to use lazy loading.
 - `POST /predict`: requires `Authorization: Bearer <FOLDING_SERVICE_API_KEY>`, accepts a raw amino-acid sequence as UTF-8 text, and returns a PDB text response.
 
 The service does not persist submitted sequences or predicted structures. It validates output sequence identity before returning a PDB. A prediction is not experimental evidence, and model confidence is not exposed by this adapter.
