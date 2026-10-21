@@ -94,7 +94,7 @@ Implemented on `build/engine-validation-foundation`:
 - Primary-sequence feature kernel and coordinate-based PDB C-alpha geometry kernel, both exposed through the console/API.
 - Shared domain classifier and regression tests for the new modules.
 
-Latest verified revision at this checkpoint: `b3d572f791ad65cadd913a3b3593922ef462f7b0`. GitHub Actions passed type-checking, regression tests, and production build. This is software CI evidence only.
+Latest verified revision at this checkpoint: `8ad597e4dd10528240fbd6788953eb53a439242e`. GitHub Actions passed type-checking, regression tests, and production build. The sequence suite includes a canonical 76-residue ubiquitin mass sanity case; the PDB suite currently uses synthetic coordinate fixtures. This is software CI evidence only.
 
 Still open:
 - Independent reference-data benchmarks for both new kernels.
