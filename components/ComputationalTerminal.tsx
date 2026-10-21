@@ -31,7 +31,7 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<'all' | 'latest'>('all');
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);\n  const structureFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -222,6 +222,26 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
         <span className="text-[8px] uppercase mono text-slate-500 font-bold flex items-center gap-1 shrink-0">
           <Sparkles size={9} className="text-cyan-400" /> Quick Primitives:
         </span>
+        <input
+          ref={structureFileRef}
+          type="file"
+          accept=".pdb,.ent,.txt"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onStructureFile(file);
+            event.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          disabled={isResolving}
+          onClick={() => structureFileRef.current?.click()}
+          className="text-[8px] mono px-2 py-0.5 rounded-full bg-cyan-950/50 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-700/50 transition-all shrink-0 disabled:opacity-50 flex items-center gap-1"
+          title="Analyze C-alpha geometry from a PDB structure file"
+        >
+          <Upload size={9} /> Analyze PDB
+        </button>
         {quickChips.map((chip, idx) => (
           <button
             key={idx}
