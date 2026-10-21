@@ -220,6 +220,42 @@ const App: React.FC = () => {
     }
   };
 
+  const handleFoldSequence = async (sequence: string): Promise<string | null> => {
+    const addLocalError = (message: string) => {
+      const entry: TerminalEntry = {
+        id: `fold-error-${Date.now()}`,
+        type: 'ERROR',
+        content: message,
+        timestamp: new Date(),
+      };
+      setEngine((prev) => prev ? { ...prev, terminalHistory: [entry, ...prev.terminalHistory] } : prev);
+    };
+
+    setIsResolving(true);
+    try {
+      const response = await fetch('/api/agent/protein/fold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ sequence }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Protein folding provider request failed');
+      if (data?.engine) {
+        setEngine(data.engine);
+        try {
+          localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(data.engine.terminalHistory));
+        } catch {}
+      }
+      return typeof data?.prediction?.pdbText === 'string' ? data.prediction.pdbText : null;
+    } catch (error) {
+      addLocalError(error instanceof Error ? error.message : 'Protein folding provider request failed');
+      return null;
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
   const handleCompareStructures = async (mobileFile: File, referenceFile: File) => {
     const addLocalError = (message: string) => {
       const entry: TerminalEntry = {
@@ -442,6 +478,7 @@ const App: React.FC = () => {
                     isResolving={isResolving}
                     onStructureFile={handleStructureFile}
                     onCompareStructures={handleCompareStructures}
+                    onFoldSequence={handleFoldSequence}
                   />
                 </div>
                 <div className="flex-1 glass rounded-2xl p-4 flex flex-col justify-center bg-slate-900/40 border-slate-800 hidden md:flex">

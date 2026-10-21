@@ -8,6 +8,7 @@ import { calculateProteinSequenceFeatures } from './services/proteinSequence.ts'
 import { classifyScientificDomain } from './services/domainClassifier.ts';
 import { calculatePdbCaGeometry } from './services/proteinStructure.ts';
 import { calculateAlignedCaRmsd } from './services/proteinRmsd.ts';
+import { FoldingProviderError, predictProteinStructure } from './services/foldingProvider.ts';
 import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
 
 const app = express();
@@ -350,6 +351,66 @@ app.post('/api/agent/protein/structure', (req, res) => {
     return res.json({ success: true, features: geometry, finalResult, engine });
   } catch (error) {
     return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid PDB structure' });
+  }
+});
+
+app.post('/api/agent/protein/fold', async (req, res) => {
+  if (!isRecord(req.body) || typeof req.body.sequence !== 'string') {
+    return res.status(400).json({ error: 'sequence must be supplied as a string' });
+  }
+
+  try {
+    const prediction = await predictProteinStructure(req.body.sequence);
+    const geometry = calculatePdbCaGeometry(prediction.pdbText);
+    const finalResult: ResolutionData = {
+      status: 'RESOLVED',
+      resultClass: 'computed',
+      method: prediction.method,
+      summary: `Provider ${prediction.provider} returned a predicted structure using model ${prediction.modelId}. The output is a model prediction, not experimental evidence.`,
+      states: [{
+        label: 'Protein Structure Prediction',
+        metrics: [
+          { name: 'Sequence Length', value: prediction.sequenceLength, unit: 'residues' },
+          { name: 'C-alpha Residues', value: prediction.caResidueCount, unit: 'residues' },
+          { name: 'Radius of Gyration', value: geometry.radiusOfGyrationAngstrom, unit: 'Å' }
+        ]
+      }],
+      deterministicSteps: [
+        `1. Submitted the validated sequence to configured provider ${prediction.provider} / model ${prediction.modelId}.`,
+        '2. Validated the returned PDB coordinates and exact single-chain sequence correspondence.',
+        `3. Computed C-alpha geometry using ${geometry.method}; no energy or experimental stability was inferred.`,
+        ...prediction.limitations.map((limitation) => `Limitation: ${limitation}`)
+      ]
+    };
+
+    const timestamp = new Date();
+    const commandEntry: TerminalEntry = {
+      id: `fold-cmd-${Date.now()}`,
+      type: 'COMMAND',
+      content: `Predict protein structure for ${prediction.sequenceLength} residues using configured provider`,
+      timestamp,
+    };
+    const resultEntry: TerminalEntry = {
+      id: `fold-result-${Date.now() + 1}`,
+      type: 'RESOLUTION',
+      content: finalResult,
+      timestamp: new Date(),
+    };
+    engine.terminalHistory = [resultEntry, commandEntry, ...engine.terminalHistory].slice(0, 500);
+    engine.logs.unshift(`[COMPUTATION] Protein structure predicted by ${prediction.provider} / ${prediction.modelId}; output hash ${prediction.pdbSha256}.`);
+    engine.logs = engine.logs.slice(0, 50);
+    saveLocalStorage();
+    return res.json({ success: true, prediction, geometry, finalResult, engine });
+  } catch (error) {
+    if (error instanceof FoldingProviderError) {
+      const status = error.code === 'UNAVAILABLE' ? 503
+        : error.code === 'INVALID_INPUT' ? 400
+        : error.code === 'TIMEOUT' ? 504
+        : error.code === 'UPSTREAM_FAILURE' ? 502
+        : 502;
+      return res.status(status).json({ error: error.message, code: error.code });
+    }
+    return res.status(500).json({ error: 'Protein structure prediction failed unexpectedly.' });
   }
 });
 

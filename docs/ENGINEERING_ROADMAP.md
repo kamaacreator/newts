@@ -87,18 +87,23 @@ A release is eligible for scientific review only when:
 
 ## Current branch progress (2026-10-22)
 
-Implemented on `build/engine-validation-foundation`:
-- CI type-check, regression-test, and production-build workflow.
-- Explicit result-class/method provenance for new computed feature outputs; legacy formula outputs default to illustrative.
-- API payload bounds and validation, production signed-session authentication, and a sign-in/sign-out flow.
-- Primary-sequence feature kernel and coordinate-based PDB C-alpha geometry kernel, both exposed through the console/API.
-- Shared domain classifier and regression tests for the new modules.
+### Verified software checkpoints
 
-Latest verified revision at this checkpoint: `8ad597e4dd10528240fbd6788953eb53a439242e`. GitHub Actions passed type-checking, regression tests, and production build. The sequence suite includes a canonical 76-residue ubiquitin mass sanity case; the PDB suite currently uses synthetic coordinate fixtures. This is software CI evidence only.
+- **Foundation** — production auth/session flow, API payload bounds, explicit result provenance, sequence features, and PDB geometry. CI passed on `d2761ffa4955026e9e55e683f37faee38bae2389`.
+- **Aligned structural comparison** — Horn quaternion superposition and C-alpha RMSD, with rigid-body-invariance tests. CI passed on `539754c473e7f6bf57da6f17cef2d967dc42870a`.
+- **Reference fixture and parser hardening** — public PDB 1UBQ fixture (76 C-alpha residues), transformed-structure near-zero RMSD test, corrected unmatched-residue accounting, strict numeric validation, first-model and alternate-location tests. CI passed on `d6c16cb2383e904f69dae740950a63531b5d5dc0`.
+- **Authentication hardening** — bounded per-IP failed-login throttling and no-store auth responses. CI passed on `d55847431816119cad0dca3d51ac81b7a25a88b0`.
+- **Folding provider contract** — explicit configurable endpoint/model, sequence validation, PDB output validation and hash provenance, authenticated API route, UI submission/download flow, and no heuristic fallback. CI passed on `c7e3a98bc512d5740b884a3c510dd2792a9d6ba8`; the latest response-stream size-limit hardening is under CI verification.
 
-Still open:
-- Independent reference-data benchmarks for both new kernels.
-- API integration tests including production auth, invalid payloads, and persistence failures.
-- Rate limiting, reverse-proxy deployment review, and external security review.
-- Historical cleanup review for the previously tracked runtime JSON.
-- A genuine folding predictor / molecular mechanics path; no such capability is claimed by these kernels.
+These are software checks. They are not scientific approval or evidence that a live folding model is configured.
+
+### Remaining gates
+
+- Configure an approved provider and exact model version in a deployment; execute a live end-to-end prediction and verify output provenance.
+- Compare aligned RMSD against an independent structural-alignment implementation and a broader curated reference set.
+- Add API integration tests for production auth, provider timeout/error paths, and persistence failures.
+- Replace process-local rate limiting with a shared store before multi-instance deployment; validate reverse-proxy configuration.
+- Review historical versions of the formerly tracked runtime JSON for private material. The file is removed from the feature branch, but Git history is not rewritten.
+- Perform external security and scientific review, and document explicit release approval scope.
+
+A genuine folding model is only integrated through a configurable provider contract at this checkpoint. No model is deployed by default; the API fails closed with 503 when provider configuration is absent.
