@@ -239,7 +239,7 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
         {isResolving && (
           <div className="flex items-center gap-2 text-cyan-400 mono text-[9px] animate-pulse bg-cyan-950/30 p-2 rounded-lg border border-cyan-800/30">
             <Cpu size={12} className="animate-spin" />
-            <span>CALCULATING DETERMINISTIC MANIFOLD EQUILIBRIUM...</span>
+            <span>RUNNING REQUESTED CALCULATION PATH...</span>
           </div>
         )}
 
@@ -284,7 +284,7 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isResolving}
-            placeholder="INPUT_RESOLUTION_CMD (e.g. 'Model Cas9 PAM recognition kinetics', 'FEA cantilever beam')"
+            placeholder="Command or SEQUENCE: paste amino-acid sequence / FASTA"
             className="w-full bg-slate-900/60 border border-slate-800 rounded-lg py-2 px-3 text-[10px] mono text-cyan-300 outline-none focus:border-cyan-500/50 transition-all pr-10 shadow-inner"
           />
           <button 
