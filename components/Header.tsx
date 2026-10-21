@@ -8,7 +8,8 @@ interface HeaderProps {
   engineMode: EngineMode;
   logicalTime: number;
   coherence: number;
-  onToggleMobileMenu?: () => void;\n  onSignOut?: () => void;
+  onToggleMobileMenu?: () => void;
+  onSignOut?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -16,7 +17,8 @@ const Header: React.FC<HeaderProps> = ({
   setIsRunning, 
   logicalTime, 
   coherence,
-  onToggleMobileMenu 
+  onToggleMobileMenu,
+  onSignOut,
 }) => {
   return (
     <header className="h-16 glass border-t-0 border-x-0 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
