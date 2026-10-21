@@ -90,7 +90,8 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
     const data = entry.content as ResolutionData;
     const isCopied = copiedId === entry.id;
     const isExpanded = expandedCodeId === entry.id;
-    const isPending = data.status === 'PENDING_COMPUTATION';\n    const resultClass = data.resultClass ?? 'illustrative';
+    const isPending = data.status === 'PENDING_COMPUTATION';
+    const resultClass = data.resultClass ?? 'illustrative';
 
     return (
       <div className="mt-2 space-y-3 relative group/res">
