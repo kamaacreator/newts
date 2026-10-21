@@ -60,6 +60,34 @@ export function normalizeFoldingSequence(input: unknown): string {
   return sequence;
 }
 
+async function readLimitedText(response: Response, maxBytes: number): Promise<string> {
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new FoldingProviderError('Folding provider returned an oversized structure.', 'INVALID_OUTPUT');
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder('utf-8', { fatal: true }).decode(combined);
+}
+
 function resolveEndpoint(config: FoldingProviderConfig): URL {
   if (!config.endpoint || !config.modelId?.trim()) {
     throw new FoldingProviderError(
@@ -141,9 +169,18 @@ export async function predictProteinStructure(
       throw new FoldingProviderError('Folding provider returned an oversized structure.', 'INVALID_OUTPUT');
     }
 
-    const pdbText = await response.text();
-    if (!pdbText.trim() || Buffer.byteLength(pdbText, 'utf8') > MAX_PDB_BYTES) {
-      throw new FoldingProviderError('Folding provider returned an empty or oversized structure.', 'INVALID_OUTPUT');
+    let pdbText: string;
+    try {
+      pdbText = await readLimitedText(response, MAX_PDB_BYTES);
+    } catch (error) {
+      if (error instanceof FoldingProviderError) throw error;
+      if (controller.signal.aborted) {
+        throw new FoldingProviderError('Folding provider request timed out after 180 seconds.', 'TIMEOUT');
+      }
+      throw new FoldingProviderError('Could not read a valid PDB response from the folding provider.', 'INVALID_OUTPUT');
+    }
+    if (!pdbText.trim()) {
+      throw new FoldingProviderError('Folding provider returned an empty structure.', 'INVALID_OUTPUT');
     }
 
     let caResidueCount: number;
