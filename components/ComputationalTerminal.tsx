@@ -23,6 +23,7 @@ interface ComputationalTerminalProps {
   isResolving: boolean;
   onStructureFile: (file: File) => void;
   onCompareStructures: (mobile: File, reference: File) => void;
+  onFoldSequence: (sequence: string) => Promise<string | null>;
 }
 
 const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({ 
@@ -31,11 +32,16 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
   isResolving,
   onStructureFile,
   onCompareStructures,
+  onFoldSequence,
 }) => {
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<'all' | 'latest'>('all');
+  const [foldPanelOpen, setFoldPanelOpen] = useState(false);
+  const [foldSequence, setFoldSequence] = useState('');
+  const [lastFoldPdb, setLastFoldPdb] = useState<string | null>(null);
+  const [foldStatus, setFoldStatus] = useState('Provider must be configured by the deployment operator. Submitted sequences are sent to that provider.');
   const scrollRef = useRef<HTMLDivElement>(null);
   const structureFileRef = useRef<HTMLInputElement>(null);
   const compareFileRef = useRef<HTMLInputElement>(null);
@@ -275,6 +281,15 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
         >
           <Upload size={9} /> Compare 2 PDBs
         </button>
+        <button
+          type="button"
+          disabled={isResolving}
+          onClick={() => setFoldPanelOpen((open) => !open)}
+          className="text-[8px] mono px-2 py-0.5 rounded-full bg-violet-950/50 hover:bg-violet-900/60 text-violet-300 border border-violet-700/50 transition-all shrink-0 disabled:opacity-50 flex items-center gap-1"
+          title="Predict a protein structure using the explicitly configured folding provider"
+        >
+          <Cpu size={9} /> Predict Fold
+        </button>
         {quickChips.map((chip, idx) => (
           <button
             key={idx}
@@ -286,6 +301,60 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
           </button>
         ))}
       </div>
+
+      {foldPanelOpen && (
+        <div className="mx-3 sm:mx-4 mb-3 p-3 rounded-lg border border-violet-800/50 bg-violet-950/10 space-y-2">
+          <div className="text-[9px] mono uppercase tracking-widest text-violet-300">Protein structure prediction</div>
+          <textarea
+            value={foldSequence}
+            onChange={(event) => setFoldSequence(event.target.value)}
+            rows={3}
+            maxLength={12000}
+            disabled={isResolving}
+            placeholder="Paste a protein sequence or FASTA record (max 768 residues)…"
+            className="w-full resize-y rounded-md bg-slate-950/80 border border-slate-700 p-2 text-xs mono text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-500"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={isResolving || !foldSequence.trim()}
+              onClick={async () => {
+                setLastFoldPdb(null);
+                setFoldStatus('Submitting sequence to the configured provider…');
+                const pdb = await onFoldSequence(foldSequence);
+                if (pdb) {
+                  setLastFoldPdb(pdb);
+                  setFoldStatus('Prediction received and validated. Download the PDB to inspect the returned coordinates.');
+                } else {
+                  setFoldStatus('Prediction did not complete. Check the terminal error and provider configuration.');
+                }
+              }}
+              className="text-[9px] mono px-3 py-1.5 rounded bg-violet-700/80 hover:bg-violet-600 text-white disabled:opacity-40"
+            >
+              Run folding prediction
+            </button>
+            {lastFoldPdb && (
+              <button
+                type="button"
+                onClick={() => {
+                  const blob = new Blob([lastFoldPdb], { type: 'chemical/x-pdb' });
+                  const url = URL.createObjectURL(blob);
+                  const anchor = document.createElement('a');
+                  anchor.href = url;
+                  anchor.download = 'aetheris-predicted-structure.pdb';
+                  anchor.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="text-[9px] mono px-3 py-1.5 rounded border border-violet-700/60 text-violet-200 hover:bg-violet-900/40 flex items-center gap-1"
+              >
+                <Download size={10} /> Download predicted PDB
+              </button>
+            )}
+          </div>
+          <div className="text-[9px] text-slate-400 mono">{foldStatus}</div>
+          <div className="text-[9px] text-amber-300/80">A model prediction is not experimental evidence. Only submit sequences approved for the configured provider's data-handling terms.</div>
+        </div>
+      )}
 
       {/* History Stream */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 custom-scrollbar">
