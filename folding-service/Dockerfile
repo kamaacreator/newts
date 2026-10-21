@@ -5,6 +5,7 @@ FROM pytorch/pytorch:1.12.1-cuda11.3-cudnn8-devel
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     FOLDING_DEVICE=cuda \
+    FOLDING_EAGER_LOAD=1 \
     FOLDING_CHUNK_SIZE=64 \
     TORCH_HOME=/models/torch
 
