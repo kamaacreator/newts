@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { parsePdbCaAtoms } from './pdbParser.ts';
+import { parsePdbCaAtoms, THREE_TO_ONE } from './pdbParser.ts';
 
 const MAX_SEQUENCE_LENGTH = 768;
 const MAX_PDB_BYTES = 2_000_000;
@@ -136,6 +136,11 @@ export async function predictProteinStructure(
       throw new FoldingProviderError(`Folding provider returned HTTP ${response.status}.`, 'UPSTREAM_FAILURE');
     }
 
+    const declaredLength = Number(response.headers.get('content-length'));
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_PDB_BYTES) {
+      throw new FoldingProviderError('Folding provider returned an oversized structure.', 'INVALID_OUTPUT');
+    }
+
     const pdbText = await response.text();
     if (!pdbText.trim() || Buffer.byteLength(pdbText, 'utf8') > MAX_PDB_BYTES) {
       throw new FoldingProviderError('Folding provider returned an empty or oversized structure.', 'INVALID_OUTPUT');
@@ -143,9 +148,20 @@ export async function predictProteinStructure(
 
     let caResidueCount: number;
     try {
-      caResidueCount = parsePdbCaAtoms(pdbText).length;
+      const atoms = parsePdbCaAtoms(pdbText);
+      caResidueCount = atoms.length;
+      if (new Set(atoms.map((atom) => atom.chain)).size !== 1) {
+        throw new Error('Multiple chains are not supported by the single-sequence endpoint');
+      }
+      const predictedSequence = atoms.map((atom) => THREE_TO_ONE[atom.residueName]).join('');
+      if (!predictedSequence || predictedSequence !== sequence) {
+        throw new Error('Predicted structure sequence does not match the submitted sequence');
+      }
     } catch {
-      throw new FoldingProviderError('Folding provider response is not a valid C-alpha-containing PDB structure.', 'INVALID_OUTPUT');
+      throw new FoldingProviderError(
+        'Folding provider response failed PDB validation or did not match the submitted sequence exactly.',
+        'INVALID_OUTPUT',
+      );
     }
 
     return {
