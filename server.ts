@@ -7,7 +7,7 @@ import { generateDeterministicCode, compileDeterministicData } from './services/
 import { calculateProteinSequenceFeatures } from './services/proteinSequence.ts';
 import { classifyScientificDomain } from './services/domainClassifier.ts';
 import { calculatePdbCaGeometry } from './services/proteinStructure.ts';
-import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
+import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, revokeSessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
 import { checkLoginRateLimit, clearLoginFailures, recordFailedLogin } from './services/loginRateLimit.ts';
 
 const app = express();
@@ -111,7 +111,8 @@ app.post('/api/auth/login', (req, res) => {
   return res.json({ authenticated: true });
 });
 
-app.post('/api/auth/logout', (_req, res) => {
+app.post('/api/auth/logout', (req, res) => {
+  revokeSessionToken(readSessionCookie(req), authConfig);
   res.clearCookie('aetheris_session', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', path: '/api' });
   return res.json({ authenticated: false });
 });
