@@ -6,6 +6,7 @@ import type { EngineState, GlobalObjective, UniversalStateObject, TerminalEntry,
 import { generateDeterministicCode, compileDeterministicData } from './services/geminiService.ts';
 import { calculateProteinSequenceFeatures } from './services/proteinSequence.ts';
 import { classifyScientificDomain } from './services/domainClassifier.ts';
+import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
 
 const app = express();
 // Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
@@ -33,6 +34,69 @@ const validateEnvironment = (value: unknown): value is { temperature?: number; z
   if ('znConcentration' in value && (typeof value.znConcentration !== 'number' || !Number.isFinite(value.znConcentration) || value.znConcentration < 0 || value.znConcentration > 1)) return false;
   return true;
 };
+
+const authConfig = {
+  username: process.env.AETHERIS_USERNAME,
+  password: process.env.AETHERIS_PASSWORD,
+  sessionSecret: process.env.AETHERIS_SESSION_SECRET,
+};
+
+function readSessionCookie(req: import('express').Request): string | undefined {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return undefined;
+  const pair = cookieHeader.split(';').map((part) => part.trim()).find((part) => part.startsWith('aetheris_session='));
+  return pair ? decodeURIComponent(pair.slice('aetheris_session='.length)) : undefined;
+}
+
+const sessionIsValid = (req: import('express').Request): boolean =>
+  verifySessionToken(readSessionCookie(req), authConfig);
+
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
+
+app.get('/api/auth/session', (req, res) => {
+  const developmentBypass = process.env.NODE_ENV !== 'production';
+  res.json({ authenticated: developmentBypass || sessionIsValid(req), authRequired: !developmentBypass });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  if (!authIsConfigured(authConfig)) {
+    return res.status(503).json({
+      error: 'Production authentication is not configured. Set AETHERIS_USERNAME, AETHERIS_PASSWORD, and a random AETHERIS_SESSION_SECRET of at least 32 characters.'
+    });
+  }
+  if (!isRecord(req.body) || !verifyCredentials(req.body.username, req.body.password, authConfig)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = createSessionToken(authConfig);
+  res.cookie('aetheris_session', token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/api',
+    maxAge: SESSION_TTL_SECONDS_FOR_COOKIE * 1000,
+  });
+  return res.json({ authenticated: true });
+});
+
+app.post('/api/auth/logout', (_req, res) => {
+  res.clearCookie('aetheris_session', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', path: '/api' });
+  return res.json({ authenticated: false });
+});
+
+app.use('/api/agent', (req, res, next) => {
+  if (process.env.NODE_ENV !== 'production') return next();
+  if (!authIsConfigured(authConfig)) {
+    return res.status(503).json({ error: 'API disabled until production authentication is configured' });
+  }
+  if (!sessionIsValid(req)) return res.status(401).json({ error: 'Authentication required' });
+  return next();
+});
 
 const STORAGE_FILE = path.join(process.cwd(), 'local_storage.json');
 
