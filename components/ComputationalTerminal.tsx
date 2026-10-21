@@ -88,14 +88,14 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
     const data = entry.content as ResolutionData;
     const isCopied = copiedId === entry.id;
     const isExpanded = expandedCodeId === entry.id;
-    const isPending = data.status === 'PENDING_COMPUTATION';
+    const isPending = data.status === 'PENDING_COMPUTATION';\n    const resultClass = data.resultClass ?? 'illustrative';
 
     return (
       <div className="mt-2 space-y-3 relative group/res">
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center gap-2">
             <div className={`text-[8px] uppercase tracking-widest mono ${isPending ? 'text-amber-500/70' : 'text-emerald-400 font-bold'}`}>
-              {isPending ? 'Awaiting Deterministic Input' : 'Prototype Calculation Output'}
+              {isPending ? 'Awaiting Calculation' : resultClass === 'computed' ? 'Computed Feature Output' : resultClass === 'estimated' ? 'Model Estimate (Unvalidated)' : resultClass === 'unsupported' ? 'Unsupported Request' : 'Illustrative Prototype Output'}
             </div>
             {data.deterministicCode && (
               <div className="text-[8px] uppercase tracking-widest text-cyan-400/80 mono flex items-center gap-1 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">
@@ -129,8 +129,10 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
           ))}
         </div>
 
-        <div className="text-[9px] border border-amber-500/30 bg-amber-500/5 text-amber-200/90 rounded-lg px-2.5 py-2 leading-relaxed">
-          Prototype output only. Scientific validity has not been independently established; displayed metrics may be heuristic estimates. Generated Python snippets are illustrative and are not executed by this application.
+        <div className={`text-[9px] border rounded-lg px-2.5 py-2 leading-relaxed ${resultClass === 'computed' ? 'border-cyan-500/30 bg-cyan-500/5 text-cyan-100/90' : 'border-amber-500/30 bg-amber-500/5 text-amber-200/90'}`}>
+          {resultClass === 'computed'
+            ? `Computed by ${data.method ?? 'an unspecified method'}. This confirms that the calculation ran, not independent scientific accuracy. Review the stated method limitations before interpreting the result.`
+            : 'Prototype output only. Scientific validity has not been independently established; displayed metrics may be heuristic estimates. Generated Python snippets are illustrative and are not executed by this application.'}
         </div>
 
         <div className={`text-[9px] border-l-2 pl-2.5 py-1 rounded-r leading-relaxed ${isPending ? 'text-amber-300/80 border-amber-500/50 bg-amber-500/5' : 'text-slate-300 border-slate-500/50 bg-slate-500/5'}`}>
