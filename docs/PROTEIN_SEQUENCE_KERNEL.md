@@ -33,3 +33,8 @@ Method identifier: `primary-sequence-features-v1`.
 ## Explicitly out of scope
 
 This kernel does not calculate a three-dimensional structure, folding free energy, RMSD, folding kinetics, mutation effects, molecular dynamics, electrostatics, or a protein's biological function. Those claims require separate implementations and independent benchmark suites.
+
+
+## Reference sanity case
+
+The regression suite includes canonical 76-residue ubiquitin (sequence beginning `MQIFVKTL...`) with expected average mass approximately 8,564–8,565 Da and the GRAVY value calculated from the documented Kyte–Doolittle scale. A public reference lists ubiquitin at 8,564 Da average mass: [MRC Protein Phosphorylation and Ubiquitylation Unit](https://mrcppureagents.dundee.ac.uk/product/62290). This is a sanity check for a sequence descriptor, not validation of pI estimates or protein folding.
