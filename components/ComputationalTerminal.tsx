@@ -91,11 +91,11 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center gap-2">
             <div className={`text-[8px] uppercase tracking-widest mono ${isPending ? 'text-amber-500/70' : 'text-emerald-400 font-bold'}`}>
-              {isPending ? 'Awaiting Deterministic Input' : 'Mathematical Equilibrium Verified'}
+              {isPending ? 'Awaiting Deterministic Input' : 'Prototype Calculation Output'}
             </div>
             {data.deterministicCode && (
               <div className="text-[8px] uppercase tracking-widest text-cyan-400/80 mono flex items-center gap-1 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">
-                <Cpu size={8} /> Local Primitives Active
+                <Cpu size={8} /> Local Formula Path
               </div>
             )}
           </div>
@@ -125,7 +125,11 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
           ))}
         </div>
 
-        <div className={`text-[9px] border-l-2 pl-2.5 py-1 rounded-r leading-relaxed ${isPending ? 'text-amber-300/80 border-amber-500/50 bg-amber-500/5' : 'text-slate-300 border-emerald-500/50 bg-emerald-500/5'}`}>
+        <div className="text-[9px] border border-amber-500/30 bg-amber-500/5 text-amber-200/90 rounded-lg px-2.5 py-2 leading-relaxed">
+          Prototype output only. Scientific validity has not been independently established; displayed metrics may be heuristic estimates. Generated Python snippets are illustrative and are not executed by this application.
+        </div>
+
+        <div className={`text-[9px] border-l-2 pl-2.5 py-1 rounded-r leading-relaxed ${isPending ? 'text-amber-300/80 border-amber-500/50 bg-amber-500/5' : 'text-slate-300 border-slate-500/50 bg-slate-500/5'}`}>
           {data.summary}
         </div>
 
@@ -133,7 +137,7 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
           <div className="bg-slate-900/60 rounded-xl p-2.5 border border-slate-800/50">
             <div className="flex items-center gap-1.5 text-[8px] uppercase text-slate-400 mono mb-1.5 font-bold">
               <ListChecks size={10} className="text-cyan-400" />
-              Mathematical Validation Steps
+              Reported Calculation Steps
             </div>
             <div className="space-y-1">
               {data.deterministicSteps.map((step, i) => (
@@ -154,7 +158,7 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
             >
               <div className="flex items-center gap-2 text-[8px] uppercase text-cyan-400 mono font-bold">
                 <Code2 size={11} />
-                Deterministic Verification Script (Python)
+                Illustrative Python Code (not executed here)
               </div>
               <ChevronRight size={10} className={`text-cyan-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
             </button>
