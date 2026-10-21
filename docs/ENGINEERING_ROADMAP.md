@@ -83,3 +83,22 @@ A release is eligible for scientific review only when:
 - Never use synthetic constants as if they were measured or simulation-derived results.
 - Keep UI demonstrations separate from scientific evidence.
 - Prefer small reviewable pull requests with a clear rollback path.
+
+
+## Current branch progress (2026-10-22)
+
+Implemented on `build/engine-validation-foundation`:
+- CI type-check, regression-test, and production-build workflow.
+- Explicit result-class/method provenance for new computed feature outputs; legacy formula outputs default to illustrative.
+- API payload bounds and validation, production signed-session authentication, and a sign-in/sign-out flow.
+- Primary-sequence feature kernel and coordinate-based PDB C-alpha geometry kernel, both exposed through the console/API.
+- Shared domain classifier and regression tests for the new modules.
+
+Latest verified revision at this checkpoint: `b3d572f791ad65cadd913a3b3593922ef462f7b0`. GitHub Actions passed type-checking, regression tests, and production build. This is software CI evidence only.
+
+Still open:
+- Independent reference-data benchmarks for both new kernels.
+- API integration tests including production auth, invalid payloads, and persistence failures.
+- Rate limiting, reverse-proxy deployment review, and external security review.
+- Historical cleanup review for the previously tracked runtime JSON.
+- A genuine folding predictor / molecular mechanics path; no such capability is claimed by these kernels.
