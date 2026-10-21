@@ -24,7 +24,7 @@ function centroid(points: Point[]): Point {
 function jacobiLargestEigenvector(input: number[][]): number[] {
   const a = input.map((row) => [...row]);
   const n = a.length;
-  const v = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 1 : 0));
+  const v: number[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 1 : 0));
 
   for (let iteration = 0; iteration < 100; iteration += 1) {
     let p = 0;
