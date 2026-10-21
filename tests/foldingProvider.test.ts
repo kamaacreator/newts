@@ -88,3 +88,12 @@ test('requires HTTPS for configured production endpoints', async () => {
     (error: unknown) => error instanceof FoldingProviderError && error.code === 'UNAVAILABLE',
   );
 });
+
+
+test('rejects oversized streamed provider output before accepting the PDB', async () => {
+  const fakeFetch: typeof fetch = async () => new Response('X'.repeat(2_000_001), { status: 200 });
+  await assert.rejects(
+    predictProteinStructure(ubiquitinSequence, config, fakeFetch),
+    (error: unknown) => error instanceof FoldingProviderError && error.code === 'INVALID_OUTPUT',
+  );
+});
