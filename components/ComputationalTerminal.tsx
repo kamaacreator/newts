@@ -12,7 +12,8 @@ import {
   Download, 
   Eye, 
   EyeOff,
-  Sparkles
+  Sparkles,
+  Upload
 } from 'lucide-react';
 
 interface ComputationalTerminalProps {
@@ -20,18 +21,21 @@ interface ComputationalTerminalProps {
   onCommand: (cmd: string) => void;
   onClear: () => void;
   isResolving: boolean;
+  onStructureFile: (file: File) => void;
 }
 
 const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({ 
   history, 
   onCommand, 
-  isResolving 
+  isResolving,
+  onStructureFile,
 }) => {
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<'all' | 'latest'>('all');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const structureFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -59,7 +63,9 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
 
   const copyToClipboard = async (id: string, data: ResolutionData) => {
     const formattedText = `
---- AETHERIS DETERMINISTIC RESOLUTION REPORT ---
+--- AETHERIS CALCULATION REPORT ---
+RESULT CLASS: ${data.resultClass ?? 'illustrative'}
+METHOD: ${data.method ?? 'legacy-prototype'}
 SUMMARY: ${data.summary}
 STATES:
 ${data.states.map(s => {
@@ -67,7 +73,7 @@ ${data.states.map(s => {
   return `- ${s.label}: [${metricsStr}]`;
 }).join('\n')}
 ${data.transitions ? `TRANSITIONS:\n${data.transitions.map(t => `- ${t.from} → ${t.to}: P = ${t.probability}`).join('\n')}` : ''}
-${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''}
+${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${data.deterministicCode}` : ''}
 ------------------------------------------------
     `.trim();
 
@@ -85,17 +91,18 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
     const isCopied = copiedId === entry.id;
     const isExpanded = expandedCodeId === entry.id;
     const isPending = data.status === 'PENDING_COMPUTATION';
+    const resultClass = data.resultClass ?? 'illustrative';
 
     return (
       <div className="mt-2 space-y-3 relative group/res">
         <div className="flex justify-between items-center mb-1">
           <div className="flex items-center gap-2">
             <div className={`text-[8px] uppercase tracking-widest mono ${isPending ? 'text-amber-500/70' : 'text-emerald-400 font-bold'}`}>
-              {isPending ? 'Awaiting Deterministic Input' : 'Mathematical Equilibrium Verified'}
+              {isPending ? 'Awaiting Calculation' : resultClass === 'computed' ? 'Computed Feature Output' : resultClass === 'estimated' ? 'Model Estimate (Unvalidated)' : resultClass === 'unsupported' ? 'Unsupported Request' : 'Illustrative Prototype Output'}
             </div>
             {data.deterministicCode && (
               <div className="text-[8px] uppercase tracking-widest text-cyan-400/80 mono flex items-center gap-1 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">
-                <Cpu size={8} /> Local Primitives Active
+                <Cpu size={8} /> Local Formula Path
               </div>
             )}
           </div>
@@ -125,7 +132,13 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
           ))}
         </div>
 
-        <div className={`text-[9px] border-l-2 pl-2.5 py-1 rounded-r leading-relaxed ${isPending ? 'text-amber-300/80 border-amber-500/50 bg-amber-500/5' : 'text-slate-300 border-emerald-500/50 bg-emerald-500/5'}`}>
+        <div className={`text-[9px] border rounded-lg px-2.5 py-2 leading-relaxed ${resultClass === 'computed' ? 'border-cyan-500/30 bg-cyan-500/5 text-cyan-100/90' : 'border-amber-500/30 bg-amber-500/5 text-amber-200/90'}`}>
+          {resultClass === 'computed'
+            ? `Computed by ${data.method ?? 'an unspecified method'}. This confirms that the calculation ran, not independent scientific accuracy. Review the stated method limitations before interpreting the result.`
+            : 'Prototype output only. Scientific validity has not been independently established; displayed metrics may be heuristic estimates. Generated Python snippets are illustrative and are not executed by this application.'}
+        </div>
+
+        <div className={`text-[9px] border-l-2 pl-2.5 py-1 rounded-r leading-relaxed ${isPending ? 'text-amber-300/80 border-amber-500/50 bg-amber-500/5' : 'text-slate-300 border-slate-500/50 bg-slate-500/5'}`}>
           {data.summary}
         </div>
 
@@ -133,7 +146,7 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
           <div className="bg-slate-900/60 rounded-xl p-2.5 border border-slate-800/50">
             <div className="flex items-center gap-1.5 text-[8px] uppercase text-slate-400 mono mb-1.5 font-bold">
               <ListChecks size={10} className="text-cyan-400" />
-              Mathematical Validation Steps
+              Reported Calculation Steps
             </div>
             <div className="space-y-1">
               {data.deterministicSteps.map((step, i) => (
@@ -154,7 +167,7 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
             >
               <div className="flex items-center gap-2 text-[8px] uppercase text-cyan-400 mono font-bold">
                 <Code2 size={11} />
-                Deterministic Verification Script (Python)
+                Illustrative Python Code (not executed here)
               </div>
               <ChevronRight size={10} className={`text-cyan-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
             </button>
@@ -218,6 +231,26 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
         <span className="text-[8px] uppercase mono text-slate-500 font-bold flex items-center gap-1 shrink-0">
           <Sparkles size={9} className="text-cyan-400" /> Quick Primitives:
         </span>
+        <input
+          ref={structureFileRef}
+          type="file"
+          accept=".pdb,.ent,.txt"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onStructureFile(file);
+            event.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          disabled={isResolving}
+          onClick={() => structureFileRef.current?.click()}
+          className="text-[8px] mono px-2 py-0.5 rounded-full bg-cyan-950/50 hover:bg-cyan-900/60 text-cyan-300 border border-cyan-700/50 transition-all shrink-0 disabled:opacity-50 flex items-center gap-1"
+          title="Analyze C-alpha geometry from a PDB structure file"
+        >
+          <Upload size={9} /> Analyze PDB
+        </button>
         {quickChips.map((chip, idx) => (
           <button
             key={idx}
@@ -235,7 +268,7 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
         {isResolving && (
           <div className="flex items-center gap-2 text-cyan-400 mono text-[9px] animate-pulse bg-cyan-950/30 p-2 rounded-lg border border-cyan-800/30">
             <Cpu size={12} className="animate-spin" />
-            <span>CALCULATING DETERMINISTIC MANIFOLD EQUILIBRIUM...</span>
+            <span>RUNNING REQUESTED CALCULATION PATH...</span>
           </div>
         )}
 
@@ -280,7 +313,7 @@ ${data.deterministicCode ? `DETERMINISTIC CODE:\n${data.deterministicCode}` : ''
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isResolving}
-            placeholder="INPUT_RESOLUTION_CMD (e.g. 'Model Cas9 PAM recognition kinetics', 'FEA cantilever beam')"
+            placeholder="Command or SEQUENCE: paste amino-acid sequence / FASTA"
             className="w-full bg-slate-900/60 border border-slate-800 rounded-lg py-2 px-3 text-[10px] mono text-cyan-300 outline-none focus:border-cyan-500/50 transition-all pr-10 shadow-inner"
           />
           <button 

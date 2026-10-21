@@ -1,6 +1,6 @@
 import React from 'react';
 import { EngineMode } from '../types';
-import { Cpu, Play, Pause, Menu, FlaskConical } from 'lucide-react';
+import { Cpu, Play, Pause, Menu, FlaskConical, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   isRunning: boolean;
@@ -9,6 +9,7 @@ interface HeaderProps {
   logicalTime: number;
   coherence: number;
   onToggleMobileMenu?: () => void;
+  onSignOut?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -16,7 +17,8 @@ const Header: React.FC<HeaderProps> = ({
   setIsRunning, 
   logicalTime, 
   coherence,
-  onToggleMobileMenu 
+  onToggleMobileMenu,
+  onSignOut,
 }) => {
   return (
     <header className="h-16 glass border-t-0 border-x-0 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
@@ -71,6 +73,17 @@ const Header: React.FC<HeaderProps> = ({
             <span className="text-xs font-bold mono text-emerald-400">{(coherence * 100).toFixed(1)}%</span>
           </div>
         </div>
+
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-all text-[9px] uppercase tracking-wider mono"
+            title="Sign out and end this session"
+          >
+            <LogOut size={12} />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
+        )}
 
         <button 
           onClick={() => setIsRunning(!isRunning)}

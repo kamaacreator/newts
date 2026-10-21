@@ -87,6 +87,8 @@ export interface StateMetric {
 
 export interface ResolutionData {
   status: 'PENDING_COMPUTATION' | 'RESOLVED';
+  resultClass?: 'computed' | 'estimated' | 'illustrative' | 'unsupported';
+  method?: string;
   states: {
     label: string;
     metrics: StateMetric[];

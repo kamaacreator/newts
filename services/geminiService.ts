@@ -1,4 +1,5 @@
 import type { ResolutionData, ScientificDomain } from "../types.ts";
+import { classifyScientificDomain } from "./domainClassifier.ts";
 
 interface ResolutionContext {
   activeEntityId?: string | null;
@@ -21,37 +22,8 @@ export function generateLocalDeterministicResolution(
 ): ResolutionData {
   const cmdLower = command.toLowerCase();
 
-  // 1. Strict Domain Classification
-  let domain: ScientificDomain = context?.activeDomain || 'BIOLOGY';
-  if (
-    cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || 
-    cmdLower.includes('gene') || cmdLower.includes('r-loop') || cmdLower.includes('hdr') || 
-    cmdLower.includes('nhej') || cmdLower.includes('chromatin') || cmdLower.includes('dna') || 
-    cmdLower.includes('protein') || cmdLower.includes('p53') || cmdLower.includes('folding') || 
-    cmdLower.includes('trp-cage') || cmdLower.includes('biology')
-  ) {
-    domain = 'BIOLOGY';
-  } else if (
-    cmdLower.includes('fea') || cmdLower.includes('cantilever') || cmdLower.includes('beam') || 
-    cmdLower.includes('structural') || cmdLower.includes('geotechnical') || cmdLower.includes('soil') || 
-    cmdLower.includes('stress') || cmdLower.includes('topology') || cmdLower.includes('simp') || 
-    cmdLower.includes('engineering')
-  ) {
-    domain = 'ENGINEERING';
-  } else if (
-    cmdLower.includes('neural') || cmdLower.includes('gradient') || cmdLower.includes('loss') || 
-    cmdLower.includes('learning') || cmdLower.includes('transformer') || cmdLower.includes('attention') || 
-    cmdLower.includes('nats') || cmdLower.includes('ai') || cmdLower.includes('qubit') ||
-    cmdLower.includes('entropy')
-  ) {
-    domain = 'AI';
-  } else if (
-    cmdLower.includes('plasma') || cmdLower.includes('tokamak') || cmdLower.includes('magnetic') || 
-    cmdLower.includes('fusion') || cmdLower.includes('confinement') || cmdLower.includes('troyon') || 
-    cmdLower.includes('physics')
-  ) {
-    domain = 'PHYSICS';
-  }
+  // Shared classifier keeps server routing and calculation dispatch consistent.
+  const domain = classifyScientificDomain(command, context?.activeDomain || 'BIOLOGY');
 
   const currentTemp = context?.globalEnv?.temperature ?? 25;
   const currentZn = context?.globalEnv?.znConcentration ?? 1.0;

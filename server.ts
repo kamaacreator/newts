@@ -4,12 +4,100 @@ import fs from 'fs';
 import { EngineMode } from './types.ts';
 import type { EngineState, GlobalObjective, UniversalStateObject, TerminalEntry, ResolutionData, ScientificDomain } from './types.ts';
 import { generateDeterministicCode, compileDeterministicData } from './services/geminiService.ts';
+import { calculateProteinSequenceFeatures } from './services/proteinSequence.ts';
+import { classifyScientificDomain } from './services/domainClassifier.ts';
+import { calculatePdbCaGeometry } from './services/proteinStructure.ts';
+import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
 
 const app = express();
 // Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
 const PORT = Number(process.env.DEFAULT_APP_PORT) || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
+
+// Validate API payloads at the boundary. This does not replace authentication;
+// deployment must still restrict network exposure and configure an auth layer.
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isBoundedStringArray = (value: unknown, maxItems: number, maxLength: number): value is string[] =>
+  Array.isArray(value) && value.length <= maxItems &&
+  value.every((item) => typeof item === 'string' && item.length <= maxLength);
+
+const isDomain = (value: unknown): value is ScientificDomain =>
+  value === 'BIOLOGY' || value === 'PHYSICS' || value === 'ENGINEERING' || value === 'AI';
+
+const validateEnvironment = (value: unknown): value is { temperature?: number; znConcentration?: number } => {
+  if (!isRecord(value)) return false;
+  const allowed = new Set(['temperature', 'znConcentration']);
+  if (Object.keys(value).some((key) => !allowed.has(key))) return false;
+  if ('temperature' in value && (typeof value.temperature !== 'number' || !Number.isFinite(value.temperature) || value.temperature < 4 || value.temperature > 60)) return false;
+  if ('znConcentration' in value && (typeof value.znConcentration !== 'number' || !Number.isFinite(value.znConcentration) || value.znConcentration < 0 || value.znConcentration > 1)) return false;
+  return true;
+};
+
+const authConfig = {
+  username: process.env.AETHERIS_USERNAME,
+  password: process.env.AETHERIS_PASSWORD,
+  sessionSecret: process.env.AETHERIS_SESSION_SECRET,
+};
+
+function readSessionCookie(req: import('express').Request): string | undefined {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return undefined;
+  const pair = cookieHeader.split(';').map((part) => part.trim()).find((part) => part.startsWith('aetheris_session='));
+  return pair ? decodeURIComponent(pair.slice('aetheris_session='.length)) : undefined;
+}
+
+const sessionIsValid = (req: import('express').Request): boolean =>
+  verifySessionToken(readSessionCookie(req), authConfig);
+
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
+
+app.get('/api/auth/session', (req, res) => {
+  const developmentBypass = process.env.NODE_ENV !== 'production';
+  res.json({ authenticated: developmentBypass || sessionIsValid(req), authRequired: !developmentBypass });
+});
+
+app.post('/api/auth/login', (req, res) => {
+  if (!authIsConfigured(authConfig)) {
+    return res.status(503).json({
+      error: 'Production authentication is not configured. Set AETHERIS_USERNAME, AETHERIS_PASSWORD, and a random AETHERIS_SESSION_SECRET of at least 32 characters.'
+    });
+  }
+  if (!isRecord(req.body) || !verifyCredentials(req.body.username, req.body.password, authConfig)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = createSessionToken(authConfig);
+  res.cookie('aetheris_session', token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/api',
+    maxAge: SESSION_TTL_SECONDS_FOR_COOKIE * 1000,
+  });
+  return res.json({ authenticated: true });
+});
+
+app.post('/api/auth/logout', (_req, res) => {
+  res.clearCookie('aetheris_session', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', path: '/api' });
+  return res.json({ authenticated: false });
+});
+
+app.use('/api/agent', (req, res, next) => {
+  if (process.env.NODE_ENV !== 'production') return next();
+  if (!authIsConfigured(authConfig)) {
+    return res.status(503).json({ error: 'API disabled until production authentication is configured' });
+  }
+  if (!sessionIsValid(req)) return res.status(401).json({ error: 'Authentication required' });
+  return next();
+});
 
 const STORAGE_FILE = path.join(process.cwd(), 'local_storage.json');
 
@@ -155,19 +243,19 @@ const runStep = () => {
         break;
       case EngineMode.COHERENCE_AUDIT: 
         nextMode = EngineMode.PREDICTIVE_BRANCHING; 
-        newLogs.unshift('[SYSTEM] Audit Passed. Branching state prediction field.');
+        newLogs.unshift('[SIMULATION] Advancing prototype lifecycle state; no scientific audit was executed.');
         break;
       case EngineMode.PREDICTIVE_BRANCHING: 
         nextMode = EngineMode.STABILITY_STEERING; 
-        newLogs.unshift('[SYSTEM] Prediction manifold stable. Applying steering vectors.');
+        newLogs.unshift('[SIMULATION] Prototype lifecycle advanced; no prediction solver was executed.');
         break;
       case EngineMode.STABILITY_STEERING: 
         nextMode = EngineMode.STRATEGIC_REASONING; 
-        newLogs.unshift('[SYSTEM] Alignment detected. Commencing reasoning loop.');
+        newLogs.unshift('[SIMULATION] Prototype lifecycle advanced; no reasoning solver was executed.');
         break;
       case EngineMode.STRATEGIC_REASONING: 
         nextMode = EngineMode.STATE_COMMIT; 
-        newLogs.unshift('[SYSTEM] Strategic logic finalized. Preparing state commit.');
+        newLogs.unshift('[SIMULATION] Prototype lifecycle advanced; no strategic computation was executed.');
         break;
       case EngineMode.STATE_COMMIT: 
         nextMode = EngineMode.COHERENCE_AUDIT; 
@@ -210,6 +298,59 @@ const updateEntitiesFromEnvironment = () => {
     p53.currentPosition.energy = total_dG;
   }
 };
+
+app.post('/api/agent/protein/structure', (req, res) => {
+  if (!isRecord(req.body) || typeof req.body.pdbText !== 'string') {
+    return res.status(400).json({ error: 'pdbText must be supplied as a PDB-format string' });
+  }
+  try {
+    const geometry = calculatePdbCaGeometry(req.body.pdbText);
+    const finalResult: ResolutionData = {
+      status: 'RESOLVED',
+      resultClass: 'computed',
+      method: geometry.method,
+      summary: `Computed coordinate-based C-alpha geometry from the supplied PDB using ${geometry.method}. This is structure analysis, not folding prediction or energy calculation.`,
+      states: [{
+        label: 'PDB C-alpha Geometry',
+        metrics: [
+          { name: 'Residue Count', value: geometry.residueCount, unit: 'residues' },
+          { name: 'Chain Count', value: geometry.chainCount, unit: 'chains' },
+          { name: 'Radius of Gyration', value: geometry.radiusOfGyrationAngstrom, unit: 'Å' },
+          { name: 'Nonlocal Contacts (<8 Å)', value: geometry.nonlocalContactsAt8Angstrom, unit: 'pairs' },
+          ...Object.entries(geometry.sequenceByChain).map(([chain, sequence]) => ({
+            name: `Chain ${chain} Sequence`, value: sequence, unit: 'one-letter sequence'
+          }))
+        ]
+      }],
+      deterministicSteps: [
+        '1. Parsed C-alpha ATOM records from the first PDB model.',
+        '2. Calculated radius of gyration from the C-alpha coordinate centroid.',
+        `3. Counted nonlocal C-alpha contacts using the stated 8.0 Å cutoff.`,
+        ...geometry.limitations.map((limitation) => `Limitation: ${limitation}`)
+      ]
+    };
+    const timestamp = new Date();
+    const commandEntry: TerminalEntry = {
+      id: `pdb-cmd-${Date.now()}`,
+      type: 'COMMAND',
+      content: 'Analyze uploaded PDB structure',
+      timestamp,
+    };
+    const resultEntry: TerminalEntry = {
+      id: `pdb-result-${Date.now() + 1}`,
+      type: 'RESOLUTION',
+      content: finalResult,
+      timestamp: new Date(),
+    };
+    engine.terminalHistory = [resultEntry, commandEntry, ...engine.terminalHistory].slice(0, 500);
+    engine.logs.unshift('[COMPUTATION] PDB C-alpha geometry analysis completed; no folding prediction was performed.');
+    engine.logs = engine.logs.slice(0, 50);
+    saveLocalStorage();
+    return res.json({ success: true, features: geometry, finalResult, engine });
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid PDB structure' });
+  }
+});
 
 app.get('/api/agent/telemetry', (req, res) => {
   res.json({ engine, isRunning });
@@ -296,38 +437,10 @@ app.post('/api/agent/commands', async (req, res) => {
   const entryId = Date.now().toString();
   const entry: TerminalEntry = { id: entryId, type: 'COMMAND', content: cleanCmd, timestamp: new Date() };
 
-  // Detect domain
-  const cmdLower = cleanCmd.toLowerCase();
-  let targetDomain: ScientificDomain = engine.activeDomain;
-  if (
-    cmdLower.includes('crispr') || cmdLower.includes('cas9') || cmdLower.includes('pam') || 
-    cmdLower.includes('gene') || cmdLower.includes('r-loop') || cmdLower.includes('hdr') || 
-    cmdLower.includes('nhej') || cmdLower.includes('chromatin') || cmdLower.includes('dna') || 
-    cmdLower.includes('protein') || cmdLower.includes('p53') || cmdLower.includes('folding') || 
-    cmdLower.includes('trp-cage') || cmdLower.includes('biology')
-  ) {
-    targetDomain = 'BIOLOGY';
-  } else if (
-    cmdLower.includes('fea') || cmdLower.includes('cantilever') || cmdLower.includes('beam') || 
-    cmdLower.includes('structural') || cmdLower.includes('geotechnical') || cmdLower.includes('soil') || 
-    cmdLower.includes('stress') || cmdLower.includes('topology') || cmdLower.includes('simp') || 
-    cmdLower.includes('engineering')
-  ) {
-    targetDomain = 'ENGINEERING';
-  } else if (
-    cmdLower.includes('plasma') || cmdLower.includes('tokamak') || cmdLower.includes('magnetic') || 
-    cmdLower.includes('fusion') || cmdLower.includes('confinement') || cmdLower.includes('troyon') || 
-    cmdLower.includes('physics')
-  ) {
-    targetDomain = 'PHYSICS';
-  } else if (
-    cmdLower.includes('neural') || cmdLower.includes('gradient') || cmdLower.includes('loss') || 
-    cmdLower.includes('learning') || cmdLower.includes('transformer') || cmdLower.includes('attention') || 
-    cmdLower.includes('nats') || cmdLower.includes('ai') || cmdLower.includes('qubit') ||
-    cmdLower.includes('entropy')
-  ) {
-    targetDomain = 'AI';
-  }
+  // Shared classification avoids server/service domain disagreement.
+  const targetDomain: ScientificDomain = cleanCmd.toUpperCase().startsWith('SEQUENCE:')
+    ? 'BIOLOGY'
+    : classifyScientificDomain(cleanCmd, engine.activeDomain);
 
   const newActiveEntityId = (targetDomain !== engine.activeDomain) 
     ? (engine.entities.find(e => e.identity.domain === targetDomain)?.id || engine.activeEntityId)
@@ -336,9 +449,40 @@ app.post('/api/agent/commands', async (req, res) => {
   engine.activeDomain = targetDomain;
   engine.activeEntityId = newActiveEntityId;
 
-  // Execute REAL deterministic mathematical calculation synchronously
+  // Execute the selected calculation path synchronously; method and limitations are returned with results.
   let finalResult: ResolutionData;
-  if (cleanCmd.startsWith('DATA:')) {
+  if (cleanCmd.toUpperCase().startsWith('SEQUENCE:')) {
+    try {
+      const features = calculateProteinSequenceFeatures(cleanCmd.slice(cleanCmd.indexOf(':') + 1));
+      finalResult = {
+        status: 'RESOLVED',
+        resultClass: 'computed',
+        method: features.method,
+        summary: `Computed primary-sequence features for ${features.sequenceLength} residues using ${features.method}. This is not a folding or structure-prediction result.`,
+        states: [{
+          label: 'Primary Sequence Features',
+          metrics: [
+            { name: 'Sequence Length', value: features.sequenceLength, unit: 'residues' },
+            { name: 'Average Molecular Mass', value: features.molecularMassDa, unit: 'Da' },
+            { name: 'GRAVY Hydropathy', value: features.gravy, unit: 'Kyte-Doolittle score' },
+            { name: 'Theoretical Isoelectric Point', value: features.theoreticalPi, unit: 'pH (estimated)' },
+            ...Object.entries(features.composition).filter(([, count]) => count > 0).map(([aa, count]) => ({
+              name: `Residue ${aa}`, value: count, unit: 'residues'
+            }))
+          ]
+        }],
+        deterministicSteps: [
+          '1. Normalize FASTA/plain-text sequence and validate standard amino-acid symbols.',
+          '2. Compute composition and average molecular mass from residue masses plus terminal water.',
+          '3. Compute Kyte–Doolittle GRAVY as the arithmetic mean of residue hydropathy.',
+          '4. Estimate theoretical pI by bisection on Henderson–Hasselbalch charge balance.',
+          ...features.limitations.map((limitation) => `Limitation: ${limitation}`)
+        ]
+      };
+    } catch (error) {
+      return res.status(400).json({ error: error instanceof Error ? error.message : 'Invalid protein sequence' });
+    }
+  } else if (cleanCmd.startsWith('DATA:')) {
     finalResult = await compileDeterministicData(cleanCmd, {
       status: 'RESOLVED',
       states: [],
@@ -378,7 +522,7 @@ app.post('/api/agent/commands', async (req, res) => {
   }
 
   engine.terminalHistory = [resEntry, entry, ...engine.terminalHistory];
-  engine.logs.unshift(`[MATH] Real deterministic resolution executed. Domain: ${targetDomain}`);
+  engine.logs.unshift(`[COMPUTATION] Calculation path completed. Domain: ${targetDomain}`);
   engine.logs.unshift(`[CMD] Execution request: ${cleanCmd}`);
   engine.logicalTime += 1;
 

@@ -1,6 +1,6 @@
 // App.tsx
 import React, { useState, useEffect } from 'react';
-import { EngineState, GlobalObjective } from './types';
+import { EngineState, GlobalObjective, TerminalEntry } from './types';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import StateGraph from './components/StateGraph';
@@ -15,8 +15,73 @@ const App: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const CHAT_STORAGE_KEY = 'aetheris_conversations_chat_history';
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/auth/session')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) {
+          setAuthenticated(Boolean(data?.authenticated));
+          setAuthChecked(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuthenticated(false);
+          setAuthChecked(true);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/agent/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ isRunning: false }),
+      });
+    } catch {}
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    } finally {
+      setAuthenticated(false);
+      setEngine(null);
+      setIsRunning(false);
+    }
+  };
+
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError('');
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Login failed');
+      setAuthenticated(true);
+      setLoginPassword('');
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'Login failed');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   // Load from local storage immediately on mount so conversations are never lost during server reboot
   useEffect(() => {
@@ -44,6 +109,11 @@ const App: React.FC = () => {
     const fetchTelemetry = async () => {
       try {
         const res = await fetch('/api/agent/telemetry');
+        if (res.status === 401 || res.status === 503) {
+          setAuthenticated(false);
+          setEngine(null);
+          return;
+        }
         const data = await res.json();
         setEngine(prev => {
           // If server history is populated, mirror to local storage
@@ -110,6 +180,46 @@ const App: React.FC = () => {
     }
   };
 
+  const handleStructureFile = async (file: File) => {
+    const addLocalError = (message: string) => {
+      const entry: TerminalEntry = {
+        id: `pdb-error-${Date.now()}`,
+        type: 'ERROR',
+        content: message,
+        timestamp: new Date(),
+      };
+      setEngine((prev) => prev ? { ...prev, terminalHistory: [entry, ...prev.terminalHistory] } : prev);
+    };
+
+    if (file.size > 2_000_000) {
+      addLocalError('PDB file exceeds the 2 MB upload limit.');
+      return;
+    }
+
+    setIsResolving(true);
+    try {
+      const pdbText = await file.text();
+      const response = await fetch('/api/agent/protein/structure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ pdbText }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'PDB analysis failed');
+      if (data?.engine) {
+        setEngine(data.engine);
+        try {
+          localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(data.engine.terminalHistory));
+        } catch {}
+      }
+    } catch (error) {
+      addLocalError(error instanceof Error ? error.message : 'PDB analysis failed');
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
   const setEnvValue = async (key: 'temperature' | 'znConcentration', val: number) => {
     if (!engine) return;
     const globalEnv = { ...engine.globalEnv, [key]: val };
@@ -156,6 +266,28 @@ const App: React.FC = () => {
   const handleReset = () => {
     window.location.reload();
   };
+
+  if (!authChecked) return <div className="flex h-screen items-center justify-center bg-black text-white mono text-sm">Checking access...</div>;
+
+  if (!authenticated) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#020617] text-slate-200 p-6">
+      <form onSubmit={handleLogin} className="w-full max-w-sm rounded-2xl border border-cyan-900/50 bg-slate-950 p-6 shadow-2xl space-y-4">
+        <div className="text-[10px] uppercase tracking-[0.25em] text-cyan-400 mono font-bold">Aetheris · Secure Access</div>
+        <h1 className="text-xl font-semibold text-white">Sign in to the engine</h1>
+        <p className="text-xs text-slate-400 leading-relaxed">Production API access requires configured server credentials. Sessions expire after eight hours.</p>
+        <label className="block text-xs text-slate-400">Username
+          <input autoComplete="username" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" required />
+        </label>
+        <label className="block text-xs text-slate-400">Password
+          <input type="password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" required />
+        </label>
+        {loginError && <p role="alert" className="text-xs text-red-400">{loginError}</p>}
+        <button type="submit" disabled={isLoggingIn} className="w-full rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-600 disabled:opacity-50">
+          {isLoggingIn ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+    </div>
+  );
 
   if (!engine) return <div className="flex h-screen items-center justify-center bg-black text-white mono text-sm">Loading Command Control...</div>;
 
@@ -267,7 +399,8 @@ const App: React.FC = () => {
                     history={engine.terminalHistory} 
                     onCommand={handleTerminalCommand} 
                     onClear={() => {}}
-                    isResolving={isResolving} 
+                    isResolving={isResolving}
+                    onStructureFile={handleStructureFile}
                   />
                 </div>
                 <div className="flex-1 glass rounded-2xl p-4 flex flex-col justify-center bg-slate-900/40 border-slate-800 hidden md:flex">
