@@ -24,7 +24,7 @@ test('uses only the first explicit PDB model', () => {
     'MODEL        2',
     atomLine(3, 'VAL', '1', '9.000'),
     'ENDMDL',
-  ].join('\\n');
+  ].join('\n');
   const atoms = parsePdbCaAtoms(pdb);
   assert.equal(atoms.length, 2);
   assert.equal(atoms[0].residueName, 'ALA');
@@ -36,7 +36,7 @@ test('prefers blank alternate location and ignores B-only alternate locations', 
     atomLine(1, 'ALA', '1', '1.000', '2.000', '3.000', 'A'),
     atomLine(2, 'ALA', '1', '4.000', '5.000', '6.000', ' '),
     atomLine(3, 'GLY', '2', '7.000', '8.000', '9.000', 'B'),
-  ].join('\\n');
+  ].join('\n');
   const atoms = parsePdbCaAtoms(pdb);
   assert.equal(atoms.length, 1);
   assert.equal(atoms[0].residueName, 'ALA');
