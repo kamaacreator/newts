@@ -51,11 +51,23 @@ export function parsePdbCaAtoms(pdbText: string): PdbCaAtom[] {
     const chain = line.slice(21, 22).trim() || '_';
     const residueNumberText = line.slice(22, 26).trim();
     const insertionCode = line.slice(26, 27).trim();
-    const x = Number(line.slice(30, 38).trim());
-    const y = Number(line.slice(38, 46).trim());
-    const z = Number(line.slice(46, 54).trim());
+    const xText = line.slice(30, 38).trim();
+    const yText = line.slice(38, 46).trim();
+    const zText = line.slice(46, 54).trim();
+    const coordinatePattern = /^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$/;
+    if (
+      !/^[+-]?\\d+$/.test(residueNumberText) ||
+      !coordinatePattern.test(xText) ||
+      !coordinatePattern.test(yText) ||
+      !coordinatePattern.test(zText)
+    ) {
+      throw new Error('PDB contains invalid or missing C-alpha coordinates or residue numbering');
+    }
+    const x = Number(xText);
+    const y = Number(yText);
+    const z = Number(zText);
     const residueNumber = Number(residueNumberText);
-    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z) || !Number.isFinite(residueNumber)) {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z) || !Number.isSafeInteger(residueNumber)) {
       throw new Error('PDB contains invalid C-alpha coordinates or residue numbering');
     }
 
