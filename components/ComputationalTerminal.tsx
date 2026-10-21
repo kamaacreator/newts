@@ -22,6 +22,7 @@ interface ComputationalTerminalProps {
   onClear: () => void;
   isResolving: boolean;
   onStructureFile: (file: File) => void;
+  onCompareStructures: (mobile: File, reference: File) => void;
 }
 
 const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({ 
@@ -29,13 +30,15 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
   onCommand, 
   isResolving,
   onStructureFile,
+  onCompareStructures,
 }) => {
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedCodeId, setExpandedCodeId] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<'all' | 'latest'>('all');
   const scrollRef = useRef<HTMLDivElement>(null);
-  const structureFileRef = useRef<HTMLInputElement>(null);\n  const compareFileRef = useRef<HTMLInputElement>(null);
+  const structureFileRef = useRef<HTMLInputElement>(null);
+  const compareFileRef = useRef<HTMLInputElement>(null);\n  const compareFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
