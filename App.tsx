@@ -43,6 +43,24 @@ const App: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/agent/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ isRunning: false }),
+      });
+    } catch {}
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    } finally {
+      setAuthenticated(false);
+      setEngine(null);
+      setIsRunning(false);
+    }
+  };
+
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoggingIn(true);
