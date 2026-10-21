@@ -5,6 +5,7 @@ import {
   createSessionToken,
   verifyCredentials,
   verifySessionToken,
+  revokeSessionToken,
 } from '../services/auth.ts';
 
 const config = {
@@ -31,4 +32,16 @@ test('session token verifies, expires, and rejects tampering', () => {
   assert.equal(verifySessionToken(token, config, now + 9 * 60 * 60 * 1000), false);
   assert.equal(verifySessionToken(token + 'x', config, now), false);
   assert.equal(verifySessionToken('invalid', config, now), false);
+});
+
+
+test('sessions are unique within the same second and logout revokes the token', () => {
+  const now = 1_800_000_000_000;
+  const first = createSessionToken(config, now);
+  const second = createSessionToken(config, now);
+  assert.notEqual(first, second);
+  assert.equal(verifySessionToken(first, config, now), true);
+  revokeSessionToken(first, config, now);
+  assert.equal(verifySessionToken(first, config, now), false);
+  assert.equal(verifySessionToken(second, config, now), true);
 });
