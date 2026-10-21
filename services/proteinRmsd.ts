@@ -115,7 +115,6 @@ export function calculateAlignedCaRmsd(mobilePdbText: string, referencePdbText: 
   const mobileAtoms = parsePdbCaAtoms(mobilePdbText);
   const referenceAtoms = parsePdbCaAtoms(referencePdbText);
   const referenceByKey = new Map(referenceAtoms.map((atom) => [atom.residueKey, atom]));
-  const mobileByKey = new Map(mobileAtoms.map((atom) => [atom.residueKey, atom]));
 
   const matchedMobile: Point[] = [];
   const matchedReference: Point[] = [];
