@@ -43,3 +43,12 @@ test('reports scientific limitations and identifies the method version', () => {
   assert.ok(result.limitations.some((item) => item.includes('folding pathway is computed')));
   assert.ok(result.limitations.some((item) => item.includes('pKa')));
 });
+
+test('matches the known size and approximate mass of canonical ubiquitin', () => {
+  // Canonical 76-residue ubiquitin; external reference lists a mass of about 8,564–8,565 Da.
+  const ubiquitin = 'MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG';
+  const result = calculateProteinSequenceFeatures(ubiquitin);
+  assert.equal(result.sequenceLength, 76);
+  assert.ok(Math.abs(result.molecularMassDa - 8565) < 1.0);
+  assert.ok(Math.abs(result.gravy - (-0.4895)) < 0.001);
+});
