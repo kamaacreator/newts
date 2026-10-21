@@ -15,8 +15,55 @@ const App: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const CHAT_STORAGE_KEY = 'aetheris_conversations_chat_history';
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/auth/session')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) {
+          setAuthenticated(Boolean(data?.authenticated));
+          setAuthChecked(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuthenticated(false);
+          setAuthChecked(true);
+        }
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError('');
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Login failed');
+      setAuthenticated(true);
+      setLoginPassword('');
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'Login failed');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   // Load from local storage immediately on mount so conversations are never lost during server reboot
   useEffect(() => {
@@ -156,6 +203,28 @@ const App: React.FC = () => {
   const handleReset = () => {
     window.location.reload();
   };
+
+  if (!authChecked) return <div className="flex h-screen items-center justify-center bg-black text-white mono text-sm">Checking access...</div>;
+
+  if (!authenticated) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#020617] text-slate-200 p-6">
+      <form onSubmit={handleLogin} className="w-full max-w-sm rounded-2xl border border-cyan-900/50 bg-slate-950 p-6 shadow-2xl space-y-4">
+        <div className="text-[10px] uppercase tracking-[0.25em] text-cyan-400 mono font-bold">Aetheris · Secure Access</div>
+        <h1 className="text-xl font-semibold text-white">Sign in to the engine</h1>
+        <p className="text-xs text-slate-400 leading-relaxed">Production API access requires configured server credentials. Sessions expire after eight hours.</p>
+        <label className="block text-xs text-slate-400">Username
+          <input autoComplete="username" value={loginUsername} onChange={(e) => setLoginUsername(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" required />
+        </label>
+        <label className="block text-xs text-slate-400">Password
+          <input type="password" autoComplete="current-password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500" required />
+        </label>
+        {loginError && <p role="alert" className="text-xs text-red-400">{loginError}</p>}
+        <button type="submit" disabled={isLoggingIn} className="w-full rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-600 disabled:opacity-50">
+          {isLoggingIn ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+    </div>
+  );
 
   if (!engine) return <div className="flex h-screen items-center justify-center bg-black text-white mono text-sm">Loading Command Control...</div>;
 
