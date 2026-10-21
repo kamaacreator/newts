@@ -9,7 +9,28 @@ const app = express();
 // Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
 const PORT = Number(process.env.DEFAULT_APP_PORT) || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '256kb' }));
+
+// Validate API payloads at the boundary. This does not replace authentication;
+// deployment must still restrict network exposure and configure an auth layer.
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isBoundedStringArray = (value: unknown, maxItems: number, maxLength: number): value is string[] =>
+  Array.isArray(value) && value.length <= maxItems &&
+  value.every((item) => typeof item === 'string' && item.length <= maxLength);
+
+const isDomain = (value: unknown): value is ScientificDomain =>
+  value === 'BIOLOGY' || value === 'PHYSICS' || value === 'ENGINEERING' || value === 'AI';
+
+const validateEnvironment = (value: unknown): value is { temperature?: number; znConcentration?: number } => {
+  if (!isRecord(value)) return false;
+  const allowed = new Set(['temperature', 'znConcentration']);
+  if (Object.keys(value).some((key) => !allowed.has(key))) return false;
+  if ('temperature' in value && (typeof value.temperature !== 'number' || !Number.isFinite(value.temperature) || value.temperature < 4 || value.temperature > 60)) return false;
+  if ('znConcentration' in value && (typeof value.znConcentration !== 'number' || !Number.isFinite(value.znConcentration) || value.znConcentration < 0 || value.znConcentration > 1)) return false;
+  return true;
+};
 
 const STORAGE_FILE = path.join(process.cwd(), 'local_storage.json');
 
@@ -155,19 +176,19 @@ const runStep = () => {
         break;
       case EngineMode.COHERENCE_AUDIT: 
         nextMode = EngineMode.PREDICTIVE_BRANCHING; 
-        newLogs.unshift('[SYSTEM] Audit Passed. Branching state prediction field.');
+        newLogs.unshift('[SIMULATION] Advancing prototype lifecycle state; no scientific audit was executed.');
         break;
       case EngineMode.PREDICTIVE_BRANCHING: 
         nextMode = EngineMode.STABILITY_STEERING; 
-        newLogs.unshift('[SYSTEM] Prediction manifold stable. Applying steering vectors.');
+        newLogs.unshift('[SIMULATION] Prototype lifecycle advanced; no prediction solver was executed.');
         break;
       case EngineMode.STABILITY_STEERING: 
         nextMode = EngineMode.STRATEGIC_REASONING; 
-        newLogs.unshift('[SYSTEM] Alignment detected. Commencing reasoning loop.');
+        newLogs.unshift('[SIMULATION] Prototype lifecycle advanced; no reasoning solver was executed.');
         break;
       case EngineMode.STRATEGIC_REASONING: 
         nextMode = EngineMode.STATE_COMMIT; 
-        newLogs.unshift('[SYSTEM] Strategic logic finalized. Preparing state commit.');
+        newLogs.unshift('[SIMULATION] Prototype lifecycle advanced; no strategic computation was executed.');
         break;
       case EngineMode.STATE_COMMIT: 
         nextMode = EngineMode.COHERENCE_AUDIT; 
