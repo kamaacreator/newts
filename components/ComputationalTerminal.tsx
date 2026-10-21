@@ -22,6 +22,7 @@ interface ComputationalTerminalProps {
   onClear: () => void;
   isResolving: boolean;
   onStructureFile: (file: File) => void;
+  onCompareStructures: (mobile: File, reference: File) => void;
 }
 
 const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({ 
@@ -29,6 +30,7 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
   onCommand, 
   isResolving,
   onStructureFile,
+  onCompareStructures,
 }) => {
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -36,6 +38,7 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
   const [viewFilter, setViewFilter] = useState<'all' | 'latest'>('all');
   const scrollRef = useRef<HTMLDivElement>(null);
   const structureFileRef = useRef<HTMLInputElement>(null);
+  const compareFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -250,6 +253,27 @@ ${data.deterministicCode ? `ILLUSTRATIVE CODE (not executed by this app):\n${dat
           title="Analyze C-alpha geometry from a PDB structure file"
         >
           <Upload size={9} /> Analyze PDB
+        </button>
+        <input
+          ref={compareFileRef}
+          type="file"
+          accept=".pdb,.ent,.txt"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            if (files.length === 2) onCompareStructures(files[0], files[1]);
+            event.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          disabled={isResolving}
+          onClick={() => compareFileRef.current?.click()}
+          className="text-[8px] mono px-2 py-0.5 rounded-full bg-slate-800/70 hover:bg-slate-700/80 text-slate-200 border border-slate-600/50 transition-all shrink-0 disabled:opacity-50 flex items-center gap-1"
+          title="Select two PDB files: first mobile structure, second reference"
+        >
+          <Upload size={9} /> Compare 2 PDBs
         </button>
         {quickChips.map((chip, idx) => (
           <button

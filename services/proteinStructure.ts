@@ -19,91 +19,11 @@ export type ProteinStructureMetrics = {
   limitations: string[];
 };
 
-const THREE_TO_ONE: Record<string, string> = {
-  ALA: 'A', ARG: 'R', ASN: 'N', ASP: 'D', CYS: 'C', GLN: 'Q', GLU: 'E',
-  GLY: 'G', HIS: 'H', ILE: 'I', LEU: 'L', LYS: 'K', MET: 'M', PHE: 'F',
-  PRO: 'P', SER: 'S', THR: 'T', TRP: 'W', TYR: 'Y', VAL: 'V',
-  MSE: 'M',
-};
-
-type ResidueCoordinate = {
-  chain: string;
-  residueKey: string;
-  residueNumber: number;
-  insertionCode: string;
-  residueName: string;
-  x: number;
-  y: number;
-  z: number;
-  chainOrder: number;
-};
+import { parsePdbCaAtoms, THREE_TO_ONE } from './pdbParser.ts';
 
 export function calculatePdbCaGeometry(pdbText: string): ProteinStructureMetrics {
-  if (typeof pdbText !== 'string' || pdbText.trim().length === 0) {
-    throw new Error('PDB text is empty');
-  }
-  if (pdbText.length > 2_000_000) throw new Error('PDB text exceeds the 2 MB limit');
+  const points = parsePdbCaAtoms(pdbText);
 
-  const lines = pdbText.split(/\r?\n/);
-  const residues = new Map<string, ResidueCoordinate>();
-  const chainCounters = new Map<string, number>();
-  let sawModel = false;
-  let inFirstModel = true;
-  let atomLineCount = 0;
-
-  for (const line of lines) {
-    const record = line.slice(0, 6).trim();
-    if (record === 'MODEL') {
-      if (!sawModel) {
-        sawModel = true;
-        inFirstModel = true;
-      } else {
-        inFirstModel = false;
-      }
-      continue;
-    }
-    if (record === 'ENDMDL' && sawModel && inFirstModel) {
-      inFirstModel = false;
-      break;
-    }
-    if (!inFirstModel || record !== 'ATOM' || line.length < 54) continue;
-    if (line.slice(12, 16).trim() !== 'CA') continue;
-    const altLoc = line.slice(16, 17);
-    if (altLoc !== ' ' && altLoc !== 'A') continue;
-
-    atomLineCount += 1;
-    const residueName = line.slice(17, 20).trim().toUpperCase();
-    const chain = line.slice(21, 22).trim() || '_';
-    const residueNumberText = line.slice(22, 26).trim();
-    const insertionCode = line.slice(26, 27).trim();
-    const x = Number(line.slice(30, 38).trim());
-    const y = Number(line.slice(38, 46).trim());
-    const z = Number(line.slice(46, 54).trim());
-    const residueNumber = Number(residueNumberText);
-
-    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z) || !Number.isFinite(residueNumber)) {
-      throw new Error('PDB contains invalid C-alpha coordinates or residue numbering');
-    }
-
-    const residueKey = `${chain}:${residueNumberText}:${insertionCode}`;
-    const existing = residues.get(residueKey);
-    // Blank alternate location is preferred over alternate A if both are present.
-    if (existing && (existing as ResidueCoordinate & { altLoc?: string }).altLoc === ' ') continue;
-
-    const chainOrder = chainCounters.get(chain) ?? 0;
-    const coordinate: ResidueCoordinate & { altLoc?: string } = {
-      chain, residueKey, residueNumber, insertionCode, residueName, x, y, z, chainOrder, altLoc,
-    };
-    residues.set(residueKey, coordinate);
-    if (!existing) chainCounters.set(chain, chainOrder + 1);
-  }
-
-  if (atomLineCount === 0 || residues.size === 0) {
-    throw new Error('No C-alpha ATOM records found in the first PDB model');
-  }
-  if (residues.size > 5000) throw new Error('Structure exceeds the 5,000-residue calculation limit');
-
-  const points = [...residues.values()];
   const cx = points.reduce((sum, p) => sum + p.x, 0) / points.length;
   const cy = points.reduce((sum, p) => sum + p.y, 0) / points.length;
   const cz = points.reduce((sum, p) => sum + p.z, 0) / points.length;
