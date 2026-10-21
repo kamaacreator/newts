@@ -40,6 +40,6 @@ test('rejects sequences above the configured length limit', () => {
 test('reports scientific limitations and identifies the method version', () => {
   const result = calculateProteinSequenceFeatures('ACDE');
   assert.equal(result.method, 'primary-sequence-features-v1');
-  assert.ok(result.limitations.some((item) => item.includes('not computed')));
+  assert.ok(result.limitations.some((item) => item.includes('folding pathway is computed')));
   assert.ok(result.limitations.some((item) => item.includes('pKa')));
 });
