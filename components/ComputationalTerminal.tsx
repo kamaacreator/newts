@@ -38,7 +38,7 @@ const ComputationalTerminal: React.FC<ComputationalTerminalProps> = ({
   const [viewFilter, setViewFilter] = useState<'all' | 'latest'>('all');
   const scrollRef = useRef<HTMLDivElement>(null);
   const structureFileRef = useRef<HTMLInputElement>(null);
-  const compareFileRef = useRef<HTMLInputElement>(null);\n  const compareFileRef = useRef<HTMLInputElement>(null);
+  const compareFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
