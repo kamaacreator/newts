@@ -25,7 +25,7 @@ def transform_pdb(text: str, perturb_first_ca: bool = False, omit_first_ca: bool
             x, y, z = float(line[30:38]), float(line[38:46]), float(line[46:54])
             nx, ny, nz = -y + 10.0, x - 5.0, z + 2.0
             if perturb_first_ca and atom_name == "CA" and residue_number == "1":
-                nx += 1.0
+                nx += 5.0
                 perturbed = True
             line = line[:30] + f"{nx:8.3f}{ny:8.3f}{nz:8.3f}" + line[54:]
         lines.append(line)
@@ -65,7 +65,7 @@ class StructureBenchmarkTests(unittest.TestCase):
         )
         row = evaluate_pair("1ubq-perturbed", UBIQUITIN_SEQUENCE, self.reference, perturbed)
         self.assertGreater(float(row["aligned_ca_rmsd_angstrom"]), 0.01)
-        self.assertLessEqual(float(row["fraction_within_2A_after_global_fit"]), 1.0)
+        self.assertLess(float(row["fraction_within_2A_after_global_fit"]), 1.0)
 
     def test_prediction_sequence_mismatch_is_a_hard_error(self):
         missing_residue = self.work / "missing-ca.pdb"
