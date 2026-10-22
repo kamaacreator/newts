@@ -134,5 +134,23 @@ class FoldingServiceTests(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
 
+    def test_rejects_inference_overload_with_retry_after(self):
+        class FullCapacity:
+            def acquire(self, blocking=False):
+                return False
+
+            def release(self):
+                raise AssertionError("release must not run when a slot was not acquired")
+
+        with patch.object(service_module, "INFLIGHT_SLOTS", FullCapacity()):
+            response = self.client.post(
+                "/predict",
+                content=UBIQUITIN_SEQUENCE,
+                headers={"Authorization": "Bearer " + KEY},
+            )
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.headers.get("Retry-After"), "2")
+
+
 if __name__ == "__main__":
     unittest.main()
