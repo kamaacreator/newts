@@ -107,10 +107,9 @@ export function generateLocalDeterministicResolution(
 
 import numpy as np
 
-def compute_crispr_kinetics(guide_length=${guideLength}, pam_match=${pamMatch ? 'True' : 'False'}, chromatin_density=${chromatinDensity}, temp_c=${currentTemp}):
+def illustrative_crispr_formula(guide_length=${guideLength}, pam_match=${pamMatch ? 'True' : 'False'}, chromatin_density=${chromatinDensity}, temp_c=${currentTemp}):
     """
-    Deterministically calculates Cas9 R-loop completion free-energy and cleavage rate.
-    Accounts for the Chromatin Accessibility Paradox via density dampening.
+    Toy equation demonstration only; it is not calibrated and does not predict experimental Cas9 outcomes.
     """
     dG_pam = -4.5 if pam_match else 1.2
     dG_seed = -1.8 * 8  # 8-bp seed region
@@ -133,8 +132,8 @@ def compute_crispr_kinetics(guide_length=${guideLength}, pam_match=${pamMatch ? 
     }
 
 if __name__ == "__main__":
-    results = compute_crispr_kinetics()
-    print("Deterministic CRISPR Simulation Output:")
+    results = illustrative_crispr_formula()
+    print("Illustrative CRISPR formula output:")
     for k, v in results.items():
         print(f"  {k}: {v}")
 `
@@ -273,10 +272,9 @@ if __name__ == "__main__":
 
 import numpy as np
 
-def solve_topology_optimization(nelx=${nelx}, nely=${nely}, volfrac=${volfrac}, penal=${penal}):
+def illustrative_topology_formula(nelx=${nelx}, nely=${nely}, volfrac=${volfrac}, penal=${penal}):
     """
-    Deterministic 2D SIMP Cantilever Topology Optimization.
-    Minimizes compliance c = U^T * K * U subject to volume fraction limit.
+    Toy scalar formula only; no mesh, stiffness matrix, finite-element solve, or iterative SIMP optimizer is implemented.
     """
     E0 = 1.0  # Young's modulus for solid material
     Emin = 1e-9  # Void modulus to prevent singularity
@@ -298,8 +296,8 @@ def solve_topology_optimization(nelx=${nelx}, nely=${nely}, volfrac=${volfrac}, 
     }
 
 if __name__ == "__main__":
-    res = solve_topology_optimization()
-    print("Deterministic Structural Optimization:", res)
+    res = illustrative_topology_formula()
+    print("Illustrative topology formula:", res)
 `
     };
   }
@@ -353,10 +351,9 @@ if __name__ == "__main__":
 
 import numpy as np
 
-def compute_loss_trajectory(steps=${steps}, lr=1e-3):
+def illustrative_loss_curve(steps=${steps}, lr=1e-3):
     """
-    Deterministic convergence model for deep representation learning.
-    Loss measured strictly in nats; latency in milliseconds.
+    Toy equation demonstration only; no training, dataset evaluation, measured loss, accuracy, or latency is produced.
     """
     initial_loss = 2.31 # nats
     decay_rate = 0.0038
@@ -372,8 +369,8 @@ def compute_loss_trajectory(steps=${steps}, lr=1e-3):
     }
 
 if __name__ == "__main__":
-    out = compute_loss_trajectory()
-    print("Machine Learning Trajectory:", out)
+    out = illustrative_loss_curve()
+    print("Illustrative loss-curve example:", out)
 `
     };
   }
@@ -429,9 +426,9 @@ if __name__ == "__main__":
 
 import numpy as np
 
-def compute_tokamak_equilibrium(B_toroidal=${B_toroidal}, plasma_current_MA=${plasmaCurrentMA}, minor_radius_m=${minorRadiusM}):
+def illustrative_plasma_formula(B_toroidal=${B_toroidal}, plasma_current_MA=${plasmaCurrentMA}, minor_radius_m=${minorRadiusM}):
     """
-    Computes plasma energy confinement time and Troyon beta limit.
+    Toy scaling illustration only; no equilibrium solver or validated stability calculation is implemented.
     """
     troyon_coefficient = 2.8
     beta_limit = troyon_coefficient * (plasma_current_MA / (minor_radius_m * B_toroidal))
@@ -449,8 +446,8 @@ def compute_tokamak_equilibrium(B_toroidal=${B_toroidal}, plasma_current_MA=${pl
     }
 
 if __name__ == "__main__":
-    out = compute_tokamak_equilibrium()
-    print("Plasma Confinement Solution:", out)
+    out = illustrative_plasma_formula()
+    print("Illustrative plasma formula:", out)
 `
   };
 }
