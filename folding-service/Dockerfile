@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git build-essen
 
 # Prevent transitive dependency upgrades from moving the legacy OpenFold stack
 # to NumPy 2.x, which is not assumed compatible.
-RUN printf 'numpy==1.23.5\\n' > /app/constraints.txt
+RUN printf 'numpy==1.23.5\n' > /app/constraints.txt
 
 COPY requirements.txt ./requirements.txt
 RUN python -m pip install --upgrade 'pip<25' && \
