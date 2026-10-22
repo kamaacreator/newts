@@ -81,10 +81,6 @@ class FoldingServiceTests(unittest.TestCase):
         self.assertEqual(response.status_code, 413)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
     def test_liveness_and_readiness_are_distinct(self):
         service_module.MODEL = None
         self.assertEqual(self.client.get("/healthz").status_code, 200)
@@ -131,3 +127,7 @@ if __name__ == "__main__":
             headers={"Authorization": "Bearer " + KEY},
         )
         self.assertEqual(response.status_code, 400)
+
+
+if __name__ == "__main__":
+    unittest.main()
