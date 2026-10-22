@@ -4,5 +4,5 @@ numpy==1.23.5
 fastapi==0.110.3
 uvicorn[standard]==0.29.0
 fair-esm[esmfold]==2.0.0
-dllogger @ git+https://github.com/NVIDIA/dllogger.git
+dllogger @ git+https://github.com/NVIDIA/dllogger.git@0478734ff7be75adde8d160e04872664d1c62e5f
 openfold @ git+https://github.com/aqlaboratory/openfold.git@4b41059694619831a7db195b7e0988fc4ff3a307
