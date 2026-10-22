@@ -14,6 +14,11 @@ test('protein heuristic returns a deterministic structured result', () => {
   const second = generateLocalDeterministicResolution('protein folding', context);
 
   assert.equal(first.status, 'RESOLVED');
+  assert.equal(first.resultClass, 'illustrative');
+  assert.equal(first.method, 'legacy-formula-illustration-v0');
+  assert.match(first.summary, /ILLUSTRATIVE protein heuristic/i);
+  assert.doesNotMatch(first.summary, /Poisson-Boltzmann|SASA calculation|native fold/i);
+  assert.ok(first.deterministicCode?.includes('ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS'));
   assert.deepEqual(first, second);
   assert.ok(first.states.length > 0);
   assert.ok(first.deterministicCode?.includes('compute_folding_energy'));
@@ -45,4 +50,22 @@ test('protein heuristic exposes threshold-selected rather than structure-derived
   // Documents the current threshold behavior; this is not scientific validation.
   assert.ok(rmsd);
   assert.equal(rmsd?.value, '0.08');
+});
+
+
+test('all legacy domain branches identify themselves as illustrative', () => {
+  const cases = [
+    ['CRISPR Cas9 cleavage', 'BIOLOGY'],
+    ['FEA cantilever beam stress', 'ENGINEERING'],
+    ['train a neural network model', 'AI'],
+    ['tokamak plasma equilibrium', 'PHYSICS'],
+  ] as const;
+
+  for (const [command, expectedDomain] of cases) {
+    const result = generateLocalDeterministicResolution(command, { activeDomain: expectedDomain });
+    assert.equal(result.resultClass, 'illustrative', command);
+    assert.equal(result.method, 'legacy-formula-illustration-v0', command);
+    assert.match(result.summary, /ILLUSTRATIVE/i, command);
+    assert.doesNotMatch(result.summary, /MECHANISTIC|Grad.?Shafranov solution|finite-element equilibrium computed|neural network is trained/i, command);
+  }
 });
