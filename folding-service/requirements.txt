@@ -1,3 +1,8 @@
+# ESMFold v1's legacy OpenFold stack is CUDA-toolchain sensitive.
+# Keep NumPy below 2 until OpenFold compatibility is explicitly validated.
+numpy==1.23.5
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
 fair-esm[esmfold]==2.0.0
+dllogger @ git+https://github.com/NVIDIA/dllogger.git
+openfold @ git+https://github.com/aqlaboratory/openfold.git@4b41059694619831a7db195b7e0988fc4ff3a307
