@@ -87,23 +87,28 @@ A release is eligible for scientific review only when:
 
 ## Current branch progress (2026-10-22)
 
-### Verified software checkpoints
+### Completed software scope on the feature branch
 
-- **Foundation** — production auth/session flow, API payload bounds, explicit result provenance, sequence features, and PDB geometry. CI passed on `d2761ffa4955026e9e55e683f37faee38bae2389`.
-- **Aligned structural comparison** — Horn quaternion superposition and C-alpha RMSD, with rigid-body-invariance tests. CI passed on `539754c473e7f6bf57da6f17cef2d967dc42870a`.
-- **Reference fixture and parser hardening** — public PDB 1UBQ fixture (76 C-alpha residues), transformed-structure near-zero RMSD test, corrected unmatched-residue accounting, strict numeric validation, first-model and alternate-location tests. CI passed on `d6c16cb2383e904f69dae740950a63531b5d5dc0`.
-- **Authentication hardening** — bounded per-IP failed-login throttling and no-store auth responses. CI passed on `d55847431816119cad0dca3d51ac81b7a25a88b0`.
-- **Folding provider contract** — explicit configurable endpoint/model, sequence validation, PDB output validation and hash provenance, authenticated API route, UI submission/download flow, and no heuristic fallback. CI passed on `c7e3a98bc512d5740b884a3c510dd2792a9d6ba8`; the latest response-stream size-limit hardening is under CI verification.
+- Sequence features and PDB C-alpha geometry are separate, explicitly named computations; they do not claim to perform folding.
+- Horn quaternion aligned C-alpha RMSD has parser regression tests, a public 1UBQ fixture, rigid-transform invariance, perturbation sensitivity, and explicit residue mismatch accounting.
+- Independent numerical verification is being added: compare the TypeScript RMSD against Biopython's independent Kabsch superposition on the same rigidly transformed and perturbed 1UBQ coordinates.
+- Authentication hardening is integrated into the current quality-gates branch: unique revocable sessions, login throttling, no-store auth responses, malformed-cookie handling, and explicit reverse-proxy trust configuration.
+- The folding API uses a configured provider/model, validates sequence/PDB correspondence, records provenance, bounds response size and timeout, and fails closed if no provider is configured.
+- A self-hosted ESMFold v1 service is included with bearer-token auth, bounded request size, output validation, readiness/liveness, and a cap of two in-flight requests.
+- CI now requires lockfile-exact npm installation, dependency audit, type checking, all Node tests, the independent RMSD cross-check, production build, Python contract tests, and a container build/import smoke test.
 
-These are software checks. They are not scientific approval or evidence that a live folding model is configured.
+### Current verification status
 
-### Remaining gates
+The prior provider/service implementation passed its software CI on `2a6ee449ef2e16b30478ea8cb9f1cfd29d161804`. The expanded gold-standard branch has additional tests and a Docker build gate; do not call the new branch green until its latest workflow completes successfully. A Docker image build and package-import smoke test do not constitute live model inference.
 
-- Configure an approved provider and exact model version in a deployment; execute a live end-to-end prediction and verify output provenance.
-- Compare aligned RMSD against an independent structural-alignment implementation and a broader curated reference set.
-- Add API integration tests for production auth, provider timeout/error paths, and persistence failures.
-- Replace process-local rate limiting with a shared store before multi-instance deployment; validate reverse-proxy configuration.
-- Review historical versions of the formerly tracked runtime JSON for private material. The file is removed from the feature branch, but Git history is not rewritten.
-- Perform external security and scientific review, and document explicit release approval scope.
+### Release blockers
 
-A genuine folding model is only integrated through a configurable provider contract at this checkpoint. No model is deployed by default; the API fails closed with 503 when provider configuration is absent.
+- Run real ESMFold inference on a supported GPU host with the pinned container and weights.
+- Verify output provenance, sequence correspondence, coordinates, runtime, VRAM and failure behavior end-to-end.
+- Compare predictions against a curated experimental structure set using predeclared metrics and leakage-aware evaluation; obtain independent scientific review.
+- Add end-to-end API tests for production authentication, persistence failures, and concurrent updates.
+- Replace process-local login/session state with a shared store before horizontal scaling.
+- Inspect Git history for private content in previously tracked runtime JSON; removal from the current tree does not erase prior blobs.
+- Implement and independently validate the actual numerical solvers for other domains before advertising them as scientific engines.
+
+Software CI, live operational verification, scientific benchmarking, and formal approval remain distinct gates.
