@@ -9,7 +9,8 @@ import { classifyScientificDomain } from './services/domainClassifier.ts';
 import { calculatePdbCaGeometry } from './services/proteinStructure.ts';
 import { calculateAlignedCaRmsd } from './services/proteinRmsd.ts';
 import { FoldingProviderError, predictProteinStructure } from './services/foldingProvider.ts';
-import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
+import { authIsConfigured, createSessionToken, verifyCredentials, verifySessionToken, revokeSessionToken, SESSION_TTL_SECONDS_FOR_COOKIE } from './services/auth.ts';
+import { checkLoginRateLimit, clearLoginFailures, recordFailedLogin } from './services/loginRateLimit.ts';
 
 const app = express();
 // Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
@@ -48,7 +49,12 @@ function readSessionCookie(req: import('express').Request): string | undefined {
   const cookieHeader = req.headers.cookie;
   if (!cookieHeader) return undefined;
   const pair = cookieHeader.split(';').map((part) => part.trim()).find((part) => part.startsWith('aetheris_session='));
-  return pair ? decodeURIComponent(pair.slice('aetheris_session='.length)) : undefined;
+  if (!pair) return undefined;
+  try {
+    return decodeURIComponent(pair.slice('aetheris_session='.length));
+  } catch {
+    return undefined;
+  }
 }
 
 const sessionIsValid = (req: import('express').Request): boolean =>
@@ -59,6 +65,11 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'same-origin');
   res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
+
+app.use('/api/auth', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
   next();
 });
 
@@ -73,9 +84,24 @@ app.post('/api/auth/login', (req, res) => {
       error: 'Production authentication is not configured. Set AETHERIS_USERNAME, AETHERIS_PASSWORD, and a random AETHERIS_SESSION_SECRET of at least 32 characters.'
     });
   }
+
+  const rateLimitKey = req.ip || req.socket.remoteAddress || 'unknown';
+  const rateLimit = checkLoginRateLimit(rateLimitKey);
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: 'Too many failed login attempts. Try again later.' });
+  }
+
   if (!isRecord(req.body) || !verifyCredentials(req.body.username, req.body.password, authConfig)) {
+    const failure = recordFailedLogin(rateLimitKey);
+    if (!failure.allowed) {
+      res.setHeader('Retry-After', String(failure.retryAfterSeconds));
+      return res.status(429).json({ error: 'Too many failed login attempts. Try again later.' });
+    }
     return res.status(401).json({ error: 'Invalid credentials' });
   }
+
+  clearLoginFailures(rateLimitKey);
   const token = createSessionToken(authConfig);
   res.cookie('aetheris_session', token, {
     httpOnly: true,
@@ -87,7 +113,8 @@ app.post('/api/auth/login', (req, res) => {
   return res.json({ authenticated: true });
 });
 
-app.post('/api/auth/logout', (_req, res) => {
+app.post('/api/auth/logout', (req, res) => {
+  revokeSessionToken(readSessionCookie(req), authConfig);
   res.clearCookie('aetheris_session', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', path: '/api' });
   return res.json({ authenticated: false });
 });
