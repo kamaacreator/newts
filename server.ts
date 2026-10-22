@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'node:url';
 import { EngineMode } from './types.ts';
 import type { EngineState, GlobalObjective, UniversalStateObject, TerminalEntry, ResolutionData, ScientificDomain } from './types.ts';
 import { generateDeterministicCode, compileDeterministicData } from './services/geminiService.ts';
@@ -761,4 +762,8 @@ async function startServer() {
   });
 }
 
-startServer();
+export { app };
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  startServer();
+}
