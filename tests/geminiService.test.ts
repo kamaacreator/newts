@@ -18,7 +18,7 @@ test('protein heuristic returns a deterministic structured result', () => {
   assert.equal(first.method, 'legacy-formula-illustration-v0');
   assert.match(first.summary, /ILLUSTRATIVE protein heuristic/i);
   assert.match(first.summary, /no sequence-specific structure/i);
-  assert.match(first.summary, /no coordinate-derived RMSD/i);
+  assert.match(first.summary, /coordinate-derived RMSD is executed/i);
   assert.ok(first.deterministicCode?.includes('ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS'));
   assert.deepEqual(first, second);
   assert.ok(first.states.length > 0);
