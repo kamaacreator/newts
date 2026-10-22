@@ -14,7 +14,7 @@ A blocked or not-applicable gate is never silently converted into a pass. The re
 ## Gate A — Reproducible software
 
 - [ ] Install JavaScript dependencies from the lockfile using `npm ci`.
-- [ ] NPM dependency audit has no unaccepted high/critical findings.
+- [ ] NPM dependency audit reports zero vulnerabilities at every severity.
 - [ ] TypeScript type check passes.
 - [ ] Every Node regression test passes.
 - [ ] Production build passes.
