@@ -96,10 +96,18 @@ class FoldingServiceTests(unittest.TestCase):
             service_module.MODEL = None
 
     def test_rejects_multichain_pdb_output(self):
-        ca_lines = [
-            line for line in UBIQUITIN_PDB.splitlines()
-            if line.startswith("ATOM") and line[12:16].strip() == "CA"
-        ][:2]
+        ca_lines = []
+        seen_residues = set()
+        for line in UBIQUITIN_PDB.splitlines():
+            if not line.startswith("ATOM") or line[12:16].strip() != "CA" or line[16:17] not in (" ", "A"):
+                continue
+            residue_key = (line[22:26], line[26:27])
+            if residue_key in seen_residues:
+                continue
+            seen_residues.add(residue_key)
+            ca_lines.append(line)
+            if len(ca_lines) == 2:
+                break
         self.assertEqual(len(ca_lines), 2)
         two_chain_pdb = "\\n".join([
             ca_lines[0][:21] + "A" + ca_lines[0][22:],
