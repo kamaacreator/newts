@@ -60,3 +60,24 @@ jobs:
 
       - name: Run CPU-only folding service contract tests
         run: python -m unittest discover -s folding-service -p 'test_*.py'
+
+  folding-container-build:
+    name: Build ESMFold inference container
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build container and execute dependency import smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: ./folding-service
+          file: ./folding-service/Dockerfile
+          push: false
+          tags: aetheris-esmfold:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
