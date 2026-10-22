@@ -48,6 +48,9 @@ class StructureBenchmarkTests(unittest.TestCase):
             UBIQUITIN_SEQUENCE,
             self.reference,
             self.prediction,
+            provider="test-provider",
+            model_id="test-model-v1",
+            prediction_method="rigid-transform-fixture",
         )
         self.assertEqual(row["matched_identical_ca_pairs"], 76)
         self.assertEqual(row["reference_ca_coverage"], 1.0)
@@ -63,7 +66,7 @@ class StructureBenchmarkTests(unittest.TestCase):
             transform_pdb(FIXTURE.read_text(encoding="utf-8"), perturb_first_ca=True),
             encoding="utf-8",
         )
-        row = evaluate_pair("1ubq-perturbed", UBIQUITIN_SEQUENCE, self.reference, perturbed)
+        row = evaluate_pair("1ubq-perturbed", UBIQUITIN_SEQUENCE, self.reference, perturbed, provider="test-provider", model_id="test-model-v1", prediction_method="perturbed-fixture")
         self.assertGreater(float(row["aligned_ca_rmsd_angstrom"]), 0.01)
         self.assertLess(float(row["fraction_within_2A_after_global_fit"]), 1.0)
 
@@ -74,14 +77,14 @@ class StructureBenchmarkTests(unittest.TestCase):
             encoding="utf-8",
         )
         with self.assertRaisesRegex(BenchmarkError, "sequence mismatch"):
-            evaluate_pair("1ubq-missing", UBIQUITIN_SEQUENCE, self.reference, missing_residue)
+            evaluate_pair("1ubq-missing", UBIQUITIN_SEQUENCE, self.reference, missing_residue, provider="test-provider", model_id="test-model-v1", prediction_method="missing-residue-fixture")
 
     def test_manifest_writes_per_target_csv_and_method_disclosed_summary(self):
         manifest = self.work / "manifest.csv"
         with manifest.open("w", encoding="utf-8", newline="") as handle:
             writer = csv.DictWriter(
                 handle,
-                fieldnames=["target_id", "sequence", "reference_pdb", "predicted_pdb"],
+                fieldnames=["target_id", "sequence", "reference_pdb", "predicted_pdb", "provider", "model_id", "prediction_method", "prediction_date"],
             )
             writer.writeheader()
             writer.writerow({
@@ -89,6 +92,10 @@ class StructureBenchmarkTests(unittest.TestCase):
                 "sequence": UBIQUITIN_SEQUENCE,
                 "reference_pdb": "reference.pdb",
                 "predicted_pdb": "prediction.pdb",
+                "provider": "self-hosted",
+                "model_id": "esmfold_v1",
+                "prediction_method": "esmfold-v1",
+                "prediction_date": "2026-10-22T00:00:00Z",
             })
         output_csv = self.work / "results.csv"
         summary_json = self.work / "summary.json"
@@ -97,8 +104,32 @@ class StructureBenchmarkTests(unittest.TestCase):
             rows = list(csv.DictReader(handle))
         self.assertEqual(len(rows), 1)
         self.assertEqual(summary["target_count"], 1)
+        self.assertEqual(summary["provider"], "self-hosted")
+        self.assertEqual(summary["model_id"], "esmfold_v1")
+        self.assertTrue(summary["manifest_sha256"])
+        self.assertTrue(summary["results_csv_sha256"])
         saved_summary = json.loads(summary_json.read_text(encoding="utf-8"))
         self.assertTrue(any("does not compute TM-score" in note for note in saved_summary["metric_notes"]))
+
+
+    def test_manifest_rejects_mixed_model_versions_in_one_aggregate(self):
+        manifest = self.work / "mixed-manifest.csv"
+        fields = ["target_id", "sequence", "reference_pdb", "predicted_pdb", "provider", "model_id", "prediction_method"]
+        with manifest.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            for target_id, model_id in [("target-a", "model-v1"), ("target-b", "model-v2")]:
+                writer.writerow({
+                    "target_id": target_id,
+                    "sequence": UBIQUITIN_SEQUENCE,
+                    "reference_pdb": "reference.pdb",
+                    "predicted_pdb": "prediction.pdb",
+                    "provider": "test-provider",
+                    "model_id": model_id,
+                    "prediction_method": "same-method",
+                })
+        with self.assertRaisesRegex(BenchmarkError, "exactly one provider/model/method"):
+            run_benchmark(manifest, self.work / "mixed.csv", self.work / "mixed.json")
 
 
 if __name__ == "__main__":
