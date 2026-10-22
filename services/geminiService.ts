@@ -146,7 +146,7 @@ if __name__ == "__main__":
     const zincLikeScore = -3.8 * Math.min(1.0, currentZn);
     const temperatureLikePenalty = 0.018 * residueCount * ((currentTemp + 273.15) / 298.15);
     
-    // Thermal denaturation penalty above physiological 42°C
+    // Toy temperature-like penalty; not a thermodynamic denaturation model
     const thermalLikePenalty = currentTemp > 42 ? 0.35 * Math.pow(currentTemp - 42, 1.5) : 0;
     const illustrativeEnergyScore = hydrophobicLikeScore + zincLikeScore + temperatureLikePenalty + thermalLikePenalty;
     
@@ -163,7 +163,7 @@ if __name__ == "__main__":
         {
           label: "S0_Sovereign_Attractor",
           metrics: [
-            { name: "Gibbs Free Energy", value: illustrativeEnergyScore.toFixed(2), unit: "arbitrary score" },
+            { name: "Illustrative energy-like score", value: illustrativeEnergyScore.toFixed(2), unit: "arbitrary score" },
             { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
             { name: "Illustrative frequency score", value: Math.round(1250 * (310.15 / (currentTemp + 273.15))).toString(), unit: "arbitrary score" }
           ]
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         {
           label: "S1_Intermediate_Lapsed",
           metrics: [
-            { name: "Gibbs Free Energy", value: (illustrativeEnergyScore + 9.9).toFixed(2), unit: "arbitrary score" },
+            { name: "Illustrative intermediate energy-like score", value: (illustrativeEnergyScore + 9.9).toFixed(2), unit: "arbitrary score" },
             { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
             { name: "Illustrative voltage score", value: (-14.2 * currentZn).toFixed(1), unit: "arbitrary score" }
           ]
@@ -213,7 +213,7 @@ def illustrative_folding_formula(residue_count=${residueCount}, zn_conc=${curren
 
 if __name__ == "__main__":
     out = illustrative_folding_formula()
-    print("Protein Conformational Stability:", out)
+    print("Illustrative protein formula output:", out)
 `
     };
   }
