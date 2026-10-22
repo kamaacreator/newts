@@ -12,9 +12,10 @@ interface ResolutionContext {
 }
 
 /**
- * Real Deterministic Mathematical Engine.
- * Executes genuine physical, biophysical, finite-element, and statistical mechanics primitives.
- * Completely local, zero mock data, isolated domain states, strict unit discipline.
+ * Legacy heuristic illustration layer.
+ * This module uses hand-coded constants and simplified equations; it is not a validated
+ * scientific solver and must not be presented as executing molecular mechanics, FEA,
+ * machine-learning training, or plasma-equilibrium solvers.
  */
 export function generateLocalDeterministicResolution(
   command: string, 
@@ -61,7 +62,9 @@ export function generateLocalDeterministicResolution(
 
       return {
         status: "RESOLVED",
-        summary: `MECHANISTIC CRISPR-CAS9 RESOLUTION: PAM (5'-NGG-3') recognition triggers sequential unwinding and R-loop formation. Catalytic HNH and RuvC domains cleave target and non-target strands respectively 3-bp upstream of PAM. Downstream pathway bifurcation between High-Fidelity HDR (${(hdrFraction * 100).toFixed(1)}%) vs Error-Prone NHEJ (${(nhejProb * 100).toFixed(1)}%) is governed by cell-cycle phase (S/G2 CDK activity) and resection dynamics. Chromatin Accessibility Paradox (dense heterochromatin barrier: +${chromatinBarrier.toFixed(2)} kcal/mol) modeled via nucleosome unwrapping barrier constants.`,
+        resultClass: "illustrative",
+        method: "legacy-formula-illustration-v0",
+        summary: `ILLUSTRATIVE CRISPR heuristic only: values are generated from fixed constants and simplified equations. This is not a validated Cas9 kinetic model and does not predict experimental cleavage, HDR, or NHEJ outcomes.`,
         states: [
           {
             label: "S0_PAM_Interrogation_Locked",
@@ -93,13 +96,13 @@ export function generateLocalDeterministicResolution(
           { from: "S1_Catalytic_R_Loop_Cleavage", to: "S2_Pathway_HDR_Resolution", probability: hdrFraction.toFixed(2) }
         ],
         deterministicSteps: [
-          "1. [DOMAIN RESET] Isolate query context to Genomic Editing & CRISPR Kinetics.",
-          "2. Discard previous structural/geotechnical finite-element matrices.",
-          `3. Compute free-energy landscape: ΔG_pam=${dG_pam} + ΔG_seed=${dG_seed} + ΔG_nonseed=${dG_nonseed.toFixed(1)} + chromatin_barrier=+${chromatinBarrier.toFixed(2)} = ${total_dG.toFixed(2)} kcal/mol.`,
-          `4. Calculate Eyring catalytic cleavage kcat = ${k_cleave.toFixed(3)} Hz at T=${currentTemp.toFixed(1)}°C.`
+          "1. Classified the request using deterministic keyword rules.",
+          "2. Parsed or defaulted guide length, chromatin density, and temperature.",
+          "3. Evaluated hand-coded illustrative equations; constants are not calibrated to an experimental dataset.",
+          "4. Output is illustrative only and is not a prediction of cleavage, HDR, or NHEJ.",
         ],
-        deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+        deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: BIOLOGY / GENOMIC CRISPR-CAS9 CLEAVAGE]
 
 import numpy as np
@@ -156,7 +159,9 @@ if __name__ == "__main__":
 
     return {
       status: "RESOLVED",
-      summary: `MECHANISTIC PROTEIN RECONSTRUCTION: Conformational ensemble analysis of sovereign attractor state. Solvation free energy ΔG calculated via Poisson-Boltzmann electrostatic continuum and solvent-accessible surface area (SASA). At T=${currentTemp.toFixed(1)}°C and [Zn]=${(currentZn * 100).toFixed(0)}%, net folding ΔG is ${total_dG.toFixed(2)} kcal/mol with backbone RMSD of ${rmsd.toFixed(2)} Å. Kinetic trapping locked into minimum RMSD native fold.`,
+      resultClass: "illustrative",
+      method: "legacy-formula-illustration-v0",
+      summary: `ILLUSTRATIVE protein heuristic only: no sequence-specific structure, force field, Poisson–Boltzmann solver, SASA calculation, conformational sampling, or coordinate-derived RMSD is executed in this path.`,
       states: [
         {
           label: "S0_Sovereign_Attractor",
@@ -179,13 +184,13 @@ if __name__ == "__main__":
         { from: "S1_Intermediate_Lapsed", to: "S0_Sovereign_Attractor", probability: stabilityIndex.toFixed(4) }
       ],
       deterministicSteps: [
-        "1. [DOMAIN RESET] Isolate query context to Biophysical Protein Dynamics.",
-        "2. Discard previous FEA and neural network context.",
-        `3. Compute continuum electrostatics: ΔG_hydrophobic=${dG_hydrophobic.toFixed(2)}, ΔG_zn=${dG_zn_coordination.toFixed(2)}, ΔS_penalty=${dG_entropy_penalty.toFixed(2)}.`,
-        `4. Total ΔG = ${total_dG.toFixed(2)} kcal/mol. Kinetic lock stability index: ${(stabilityIndex * 100).toFixed(2)}%.`
+        "1. Classified the request as a biology/protein heuristic.",
+        "2. Used a fixed residue count of 393; this path does not consume a sequence or structure.",
+        "3. Evaluated simplified energy-like terms; no force field, electrostatics, SASA, or ensemble simulation ran.",
+        "4. RMSD is selected by thresholds and is not calculated from coordinates.",
       ],
-      deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+      deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: BIOLOGY / PROTEIN BIOPHYSICS]
 
 import numpy as np
@@ -237,7 +242,9 @@ if __name__ == "__main__":
 
     return {
       status: "RESOLVED",
-      summary: `MECHANISTIC STRUCTURAL FEA & TOPOLOGY OPTIMIZATION: Linear elastic finite-element equilibrium computed via Ku = f. Topology optimization performed using Solid Isotropic Material with Penalization (SIMP) with penalization parameter p=${penal.toFixed(1)} and volume fraction constraint Vf <= ${(volfrac * 100).toFixed(1)}%. Strain energy compliance minimized across load paths to ${optimizedCompliance.toFixed(2)} Joules.`,
+      resultClass: "illustrative",
+      method: "legacy-formula-illustration-v0",
+      summary: `ILLUSTRATIVE engineering formula only: no mesh, finite-element stiffness matrix, numerical equilibrium solve, or iterative SIMP optimization is executed.`,
       states: [
         {
           label: "S0_Optimized_Topology",
@@ -260,13 +267,13 @@ if __name__ == "__main__":
         { from: "S1_Initial_Solid_Mesh", to: "S0_Optimized_Topology", probability: "1.0" }
       ],
       deterministicSteps: [
-        "1. [DOMAIN RESET] Isolate query context to Structural Mechanics & Finite Element Analysis.",
-        "2. Discard previous biological and genomic code models completely.",
-        `3. Assemble global element stiffness matrix K (${nelx * nely} bilinear Q4 elements).`,
-        `4. Solve SIMP optimality criteria: C_opt = ${optimizedCompliance.toFixed(2)} Joules, Von Mises = ${maxStressMpa.toFixed(1)} MPa.`
+        "1. Classified the request using deterministic keyword rules.",
+        "2. Parsed or defaulted a small set of scalar parameters.",
+        "3. Evaluated a closed-form illustration; no mesh or finite-element solver ran.",
+        "4. The result is not a validated structural or topology-optimization result.",
       ],
-      deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+      deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: ENGINEERING / STRUCTURAL FEA & TOPOLOGY]
 
 import numpy as np
@@ -315,7 +322,9 @@ if __name__ == "__main__":
 
     return {
       status: "RESOLVED",
-      summary: `MECHANISTIC STATISTICAL LEARNING RESOLUTION: Optimization trajectory over high-dimensional non-convex loss manifold. Minimax gradient dynamics stabilized via spectral norm clipping and Adam momentum tracking across ${steps} steps. Converged loss: ${finalLoss.toFixed(3)} nats; test accuracy: ${accuracy.toFixed(1)}%.`,
+      resultClass: "illustrative",
+      method: "legacy-formula-illustration-v0",
+      summary: `ILLUSTRATIVE loss-curve formula only: no neural network is trained, no dataset is evaluated, and no measured accuracy is produced.`,
       states: [
         {
           label: "AI0_Converged_Minima",
@@ -338,13 +347,13 @@ if __name__ == "__main__":
         { from: "AI1_Initialization_State", to: "AI0_Converged_Minima", probability: "0.992" }
       ],
       deterministicSteps: [
-        "1. [DOMAIN RESET] Isolate query context to Machine Learning & Optimization Theory.",
-        "2. Discard previous engineering FEA and biological code entirely.",
-        `3. Compute empirical risk expectation under Dirichlet prior across ${steps} optimization steps.`,
-        `4. Formulate Hessian eigenspectrum: Loss=${finalLoss.toFixed(3)} nats, Accuracy=${accuracy.toFixed(1)}%, MI=${mutualInfo.toFixed(1)} bits.`
+        "1. Classified the request using deterministic keyword rules.",
+        "2. Selected fixed illustrative loss-curve parameters.",
+        "3. Evaluated a preset equation; no model training or dataset evaluation ran.",
+        "4. No measured accuracy or generalization estimate is produced.",
       ],
-      deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+      deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: AI / MACHINE LEARNING & INFORMATION THEORY]
 
 import numpy as np
@@ -389,7 +398,9 @@ if __name__ == "__main__":
 
   return {
     status: "RESOLVED",
-    summary: `MECHANISTIC PLASMA EQUILIBRIUM: Grad-Shafranov solution for toroidal magnetic confinement (B=${B_toroidal.toFixed(1)} T, Ip=${plasmaCurrentMA.toFixed(1)} MA). Plasma beta limit computed within Troyon envelope (${betaLimitPct.toFixed(2)}%) to suppress ballooning and tearing instabilities. Energy confinement time scaled via ITER98(y,2) empirical law to ${tauE.toFixed(2)} s.`,
+    resultClass: "illustrative",
+    method: "legacy-formula-illustration-v0",
+    summary: `ILLUSTRATIVE plasma estimates only: no Grad–Shafranov equilibrium solver or independently validated plasma-stability calculation is executed.`,
     states: [
       {
         label: "P0_Quiescent_H_Mode",
@@ -412,13 +423,13 @@ if __name__ == "__main__":
       { from: "P1_Near_Disruptive_Beta", to: "P0_Quiescent_H_Mode", probability: "0.91" }
     ],
     deterministicSteps: [
-      "1. [DOMAIN RESET] Isolate query context to Plasma Physics & Magnetohydrodynamics.",
-      "2. Discard previous code and domain contexts completely.",
-      `3. Solve 2D Grad-Shafranov poloidal flux equilibrium: B_t=${B_toroidal.toFixed(1)} T, I_p=${plasmaCurrentMA.toFixed(1)} MA.`,
-      `4. Troyon beta limit = ${betaLimitPct.toFixed(2)}%, Confinement tau_E = ${tauE.toFixed(2)} s.`
+      "1. Classified the request using deterministic keyword rules.",
+      "2. Parsed or defaulted a small set of scalar plasma parameters.",
+      "3. Evaluated algebraic estimates; no Grad–Shafranov solver ran.",
+      "4. Values are illustrative and are not validated equilibrium or stability predictions.",
     ],
-    deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+    deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: PHYSICS / PLASMA CONFINEMENT & TOKAMAK]
 
 import numpy as np
@@ -463,7 +474,9 @@ export const compileDeterministicData = async (
   return {
     ...previousResolution,
     status: "RESOLVED",
+    resultClass: "illustrative",
+    method: "local-telemetry-compilation-v0",
     rawData,
-    summary: `[LOCAL COMPILATION] Deterministic telemetry synchronized across domain states.`
+    summary: `[ILLUSTRATIVE DATA COMPILATION] Telemetry fields were compiled; no scientific solver was executed.`
   };
 };
