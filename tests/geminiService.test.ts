@@ -14,9 +14,15 @@ test('protein heuristic returns a deterministic structured result', () => {
   const second = generateLocalDeterministicResolution('protein folding', context);
 
   assert.equal(first.status, 'RESOLVED');
+  assert.equal(first.resultClass, 'illustrative');
+  assert.equal(first.method, 'legacy-formula-illustration-v0');
+  assert.match(first.summary, /ILLUSTRATIVE protein heuristic/i);
+  assert.match(first.summary, /no sequence-specific structure/i);
+  assert.match(first.summary, /coordinate-derived RMSD is executed/i);
+  assert.ok(first.deterministicCode?.includes('ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS'));
   assert.deepEqual(first, second);
   assert.ok(first.states.length > 0);
-  assert.ok(first.deterministicCode?.includes('compute_folding_energy'));
+  assert.ok(first.deterministicCode?.includes('illustrative_folding_formula'));
 });
 
 test('protein heuristic output responds to temperature input', () => {
@@ -30,19 +36,37 @@ test('protein heuristic output responds to temperature input', () => {
   });
 
   assert.notEqual(
-    at25.states[0].metrics.find((metric) => metric.name === 'Gibbs Free Energy')?.value,
-    at60.states[0].metrics.find((metric) => metric.name === 'Gibbs Free Energy')?.value,
+    at25.states[0].metrics.find((metric) => metric.name === 'Illustrative energy-like score')?.value,
+    at60.states[0].metrics.find((metric) => metric.name === 'Illustrative energy-like score')?.value,
   );
 });
 
-test('protein heuristic exposes threshold-selected rather than structure-derived RMSD', () => {
+test('protein heuristic never fabricates a coordinate-derived RMSD', () => {
   const result = generateLocalDeterministicResolution('protein folding', {
     activeDomain: 'BIOLOGY',
     globalEnv: { temperature: 25, znConcentration: 1.0 },
   });
-  const rmsd = result.states[0].metrics.find((metric) => metric.name === 'Backbone RMSD');
+  const rmsd = result.states[0].metrics.find((metric) => metric.name === 'Coordinate-derived RMSD');
 
-  // Documents the current threshold behavior; this is not scientific validation.
   assert.ok(rmsd);
-  assert.equal(rmsd?.value, '0.08');
+  assert.equal(rmsd?.value, 'Not calculated');
+  assert.equal(rmsd?.unit, 'not available');
+});
+
+
+test('all legacy domain branches identify themselves as illustrative', () => {
+  const cases = [
+    ['CRISPR Cas9 cleavage', 'BIOLOGY'],
+    ['FEA cantilever beam stress', 'ENGINEERING'],
+    ['train a neural network model', 'AI'],
+    ['tokamak plasma equilibrium', 'PHYSICS'],
+  ] as const;
+
+  for (const [command, expectedDomain] of cases) {
+    const result = generateLocalDeterministicResolution(command, { activeDomain: expectedDomain });
+    assert.equal(result.resultClass, 'illustrative', command);
+    assert.equal(result.method, 'legacy-formula-illustration-v0', command);
+    assert.match(result.summary, /ILLUSTRATIVE/i, command);
+    assert.doesNotMatch(result.summary, /MECHANISTIC|Grad.?Shafranov solution|finite-element equilibrium computed/i, command);
+  }
 });

@@ -24,6 +24,8 @@ MODEL = None
 TORCH = None
 MODEL_LOCK = threading.Lock()
 INFERENCE_LOCK = threading.Lock()
+# Bound active plus queued requests so a burst cannot create an unbounded threadpool backlog.
+INFLIGHT_SLOTS = threading.BoundedSemaphore(2)
 
 
 def normalize_sequence(raw: str) -> str:
@@ -188,11 +190,20 @@ async def predict(request: Request):
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error))
 
+    if not INFLIGHT_SLOTS.acquire(blocking=False):
+        raise HTTPException(
+            status_code=429,
+            detail="Inference capacity is full; retry shortly.",
+            headers={"Retry-After": "2"},
+        )
     try:
-        pdb_text = await run_in_threadpool(infer_pdb, sequence)
-    except Exception:
-        # Avoid leaking model paths, dependency details, or provider internals.
-        raise HTTPException(status_code=503, detail="ESMFold inference is unavailable; inspect the private service logs.")
+        try:
+            pdb_text = await run_in_threadpool(infer_pdb, sequence)
+        except Exception:
+            # Avoid leaking model paths, dependency details, or provider internals.
+            raise HTTPException(status_code=503, detail="ESMFold inference is unavailable; inspect the private service logs.")
+    finally:
+        INFLIGHT_SLOTS.release()
 
     try:
         predicted_sequence = pdb_ca_sequence(pdb_text)

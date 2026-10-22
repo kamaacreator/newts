@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - "build/**"
   workflow_dispatch:
 
 permissions:
@@ -31,13 +30,27 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci
+
+      - name: Audit locked npm dependencies
+        run: npm audit --audit-level=low
 
       - name: TypeScript check
         run: npm run lint
 
       - name: Prototype regression tests
         run: npm test
+
+      - name: Set up Python for independent structural reference
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install independent structural alignment implementation
+        run: python -m pip install biopython==1.83
+
+      - name: Cross-check RMSD against Biopython Kabsch superposition
+        run: python tests/independent_rmsd_validation.py
 
       - name: Production build
         run: npm run build
@@ -60,3 +73,27 @@ jobs:
 
       - name: Run CPU-only folding service contract tests
         run: python -m unittest discover -s folding-service -p 'test_*.py'
+
+  folding-container-build:
+    name: Build ESMFold inference container
+    needs:
+      - typecheck-and-build
+      - folding-service-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build container and execute dependency import smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: ./folding-service
+          file: ./folding-service/Dockerfile
+          push: false
+          tags: aetheris-esmfold:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

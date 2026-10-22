@@ -12,9 +12,10 @@ interface ResolutionContext {
 }
 
 /**
- * Real Deterministic Mathematical Engine.
- * Executes genuine physical, biophysical, finite-element, and statistical mechanics primitives.
- * Completely local, zero mock data, isolated domain states, strict unit discipline.
+ * Legacy heuristic illustration layer.
+ * This module uses hand-coded constants and simplified equations; it is not a validated
+ * scientific solver and must not be presented as executing molecular mechanics, FEA,
+ * machine-learning training, or plasma-equilibrium solvers.
  */
 export function generateLocalDeterministicResolution(
   command: string, 
@@ -42,72 +43,73 @@ export function generateLocalDeterministicResolution(
 
       const pamMatch = !cmdLower.includes('non-pam') && !cmdLower.includes('mismatch_pam');
 
-      // Thermodynamic calculations
+      // Toy scalar-score calculations; not calibrated thermodynamics
       const dG_pam = pamMatch ? -4.5 : 1.2; // kcal/mol
       const dG_seed = -1.8 * 8; // kcal/mol (8-bp PAM-proximal seed)
       const dG_nonseed = -1.1 * Math.max(0, guideLength - 8); // kcal/mol
       const chromatinBarrier = 3.6 * chromatinDensity; // kcal/mol penalty from nucleosome wrapping
       const total_dG = dG_pam + dG_seed + dG_nonseed + chromatinBarrier;
 
-      // Rate via Arrhenius-Eyring transition state formulation
+      // Illustrative exponential score; not a calibrated kinetic model
       const R = 1.987e-3; // kcal/(mol*K)
       const T_kelvin = 273.15 + currentTemp;
       const k_cleave = Math.exp(-Math.max(0.1, total_dG + 14.5) / (R * T_kelvin));
 
-      // HDR vs NHEJ bifurcation
+      // Uncalibrated HDR/NHEJ-like heuristic scores
       const hdrFraction = 1.0 / (1.0 + Math.exp(total_dG + 8.0));
       const unwindingTimeMs = 14.2 / Math.max(0.1, 1.0 - chromatinDensity * 0.7);
       const nhejProb = Math.min(0.95, 0.04 * (1.0 + chromatinDensity * 2.0));
 
       return {
         status: "RESOLVED",
-        summary: `MECHANISTIC CRISPR-CAS9 RESOLUTION: PAM (5'-NGG-3') recognition triggers sequential unwinding and R-loop formation. Catalytic HNH and RuvC domains cleave target and non-target strands respectively 3-bp upstream of PAM. Downstream pathway bifurcation between High-Fidelity HDR (${(hdrFraction * 100).toFixed(1)}%) vs Error-Prone NHEJ (${(nhejProb * 100).toFixed(1)}%) is governed by cell-cycle phase (S/G2 CDK activity) and resection dynamics. Chromatin Accessibility Paradox (dense heterochromatin barrier: +${chromatinBarrier.toFixed(2)} kcal/mol) modeled via nucleosome unwrapping barrier constants.`,
+        resultClass: "illustrative",
+        method: "legacy-formula-illustration-v0",
+        summary: `ILLUSTRATIVE CRISPR heuristic only: values are generated from fixed constants and simplified equations. This is not a validated Cas9 kinetic model and does not predict experimental cleavage, HDR, or NHEJ outcomes.`,
         states: [
           {
-            label: "S0_PAM_Interrogation_Locked",
+            label: "Illustrative_Cas9_Stage_A",
             metrics: [
-              { name: "Association Rate (kon)", value: "1.42e6", unit: "mM/s" },
-              { name: "Binding Free Energy", value: total_dG.toFixed(2), unit: "kcal/mol" },
-              { name: "Unwinding Time", value: unwindingTimeMs.toFixed(1), unit: "ms" }
+              { name: "Illustrative association score", value: "1.42e6", unit: "arbitrary score" },
+              { name: "Illustrative binding score", value: total_dG.toFixed(2), unit: "arbitrary score" },
+              { name: "Illustrative unwinding score", value: unwindingTimeMs.toFixed(1), unit: "arbitrary score" }
             ]
           },
           {
-            label: "S1_Catalytic_R_Loop_Cleavage",
+            label: "Illustrative_Cas9_Stage_B",
             metrics: [
-              { name: "Cleavage Rate (kcat)", value: k_cleave.toFixed(3), unit: "Hz" },
-              { name: "Cellular ATP Consumption", value: "0.0", unit: "ATP" }, // Literature constant: Cas9 cleavage is ATP-independent
-              { name: "R-Loop Length", value: `${guideLength}.0`, unit: "Å" }
+              { name: "Illustrative cleavage score", value: k_cleave.toFixed(3), unit: "arbitrary score" },
+              { name: "ATP consumption", value: "Not calculated", unit: "not available" }, // Literature constant: Cas9 cleavage is ATP-independent
+              { name: "Guide Length", value: guideLength, unit: "residues" }
             ]
           },
           {
-            label: "S2_Pathway_HDR_Resolution",
+            label: "Illustrative_Repair_Stage",
             metrics: [
-              { name: "HDR Efficiency", value: (hdrFraction * 100).toFixed(1), unit: "%" },
-              { name: "NHEJ Translocation Probability", value: nhejProb.toFixed(3), unit: "prob" },
-              { name: "Resection Velocity", value: (4.1 * (T_kelvin / 310.15)).toFixed(2), unit: "mM/s" }
+              { name: "Illustrative HDR score", value: (hdrFraction * 100).toFixed(1), unit: "not calibrated" },
+              { name: "Illustrative NHEJ score", value: nhejProb.toFixed(3), unit: "not calibrated" },
+              { name: "Illustrative resection score", value: (4.1 * (T_kelvin / 310.15)).toFixed(2), unit: "arbitrary score" }
             ]
           }
         ],
         transitions: [
-          { from: "S0_PAM_Interrogation_Locked", to: "S1_Catalytic_R_Loop_Cleavage", probability: "0.94" },
-          { from: "S1_Catalytic_R_Loop_Cleavage", to: "S2_Pathway_HDR_Resolution", probability: hdrFraction.toFixed(2) }
+          { from: "Illustrative_Cas9_Stage_A", to: "Illustrative_Cas9_Stage_B", probability: "Not calibrated" },
+          { from: "Illustrative_Cas9_Stage_B", to: "Illustrative_Repair_Stage", probability: "Not calibrated" }
         ],
         deterministicSteps: [
-          "1. [DOMAIN RESET] Isolate query context to Genomic Editing & CRISPR Kinetics.",
-          "2. Discard previous structural/geotechnical finite-element matrices.",
-          `3. Compute free-energy landscape: ΔG_pam=${dG_pam} + ΔG_seed=${dG_seed} + ΔG_nonseed=${dG_nonseed.toFixed(1)} + chromatin_barrier=+${chromatinBarrier.toFixed(2)} = ${total_dG.toFixed(2)} kcal/mol.`,
-          `4. Calculate Eyring catalytic cleavage kcat = ${k_cleave.toFixed(3)} Hz at T=${currentTemp.toFixed(1)}°C.`
+          "1. Classified the request using deterministic keyword rules.",
+          "2. Parsed or defaulted guide length, chromatin density, and temperature.",
+          "3. Evaluated hand-coded illustrative equations; constants are not calibrated to an experimental dataset.",
+          "4. Output is illustrative only and is not a prediction of cleavage, HDR, or NHEJ.",
         ],
-        deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+        deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: BIOLOGY / GENOMIC CRISPR-CAS9 CLEAVAGE]
 
 import numpy as np
 
-def compute_crispr_kinetics(guide_length=${guideLength}, pam_match=${pamMatch ? 'True' : 'False'}, chromatin_density=${chromatinDensity}, temp_c=${currentTemp}):
+def illustrative_crispr_formula(guide_length=${guideLength}, pam_match=${pamMatch ? 'True' : 'False'}, chromatin_density=${chromatinDensity}, temp_c=${currentTemp}):
     """
-    Deterministically calculates Cas9 R-loop completion free-energy and cleavage rate.
-    Accounts for the Chromatin Accessibility Paradox via density dampening.
+    Toy equation demonstration only; it is not calibrated and does not predict experimental Cas9 outcomes.
     """
     dG_pam = -4.5 if pam_match else 1.2
     dG_seed = -1.8 * 8  # 8-bp seed region
@@ -130,91 +132,88 @@ def compute_crispr_kinetics(guide_length=${guideLength}, pam_match=${pamMatch ? 
     }
 
 if __name__ == "__main__":
-    results = compute_crispr_kinetics()
-    print("Deterministic CRISPR Simulation Output:")
+    results = illustrative_crispr_formula()
+    print("Illustrative CRISPR formula output:")
     for k, v in results.items():
         print(f"  {k}: {v}")
 `
       };
     }
 
-    // Default Protein Folding / Biophysics (p53 Sovereign Attractor)
+    // Default protein heuristic illustration; this is not a folding calculation
     const residueCount = 393;
-    const dG_hydrophobic = -0.025 * residueCount; // -9.825 kcal/mol
-    const dG_zn_coordination = -3.8 * Math.min(1.0, currentZn);
-    const dG_entropy_penalty = 0.018 * residueCount * ((currentTemp + 273.15) / 298.15);
+    const hydrophobicLikeScore = -0.025 * residueCount;
+    const zincLikeScore = -3.8 * Math.min(1.0, currentZn);
+    const temperatureLikePenalty = 0.018 * residueCount * ((currentTemp + 273.15) / 298.15);
     
-    // Thermal denaturation penalty above physiological 42°C
-    const thermalDenaturation = currentTemp > 42 ? 0.35 * Math.pow(currentTemp - 42, 1.5) : 0;
-    const total_dG = dG_hydrophobic + dG_zn_coordination + dG_entropy_penalty + thermalDenaturation;
+    // Toy temperature-like penalty; not a thermodynamic denaturation model
+    const thermalLikePenalty = currentTemp > 42 ? 0.35 * Math.pow(currentTemp - 42, 1.5) : 0;
+    const illustrativeEnergyScore = hydrophobicLikeScore + zincLikeScore + temperatureLikePenalty + thermalLikePenalty;
     
-    const rmsd = total_dG < -6.0 ? 0.08 : (total_dG < -2.0 ? 0.85 : 1.92 + (currentTemp > 42 ? 0.05 * (currentTemp - 42) : 0));
-    const stabilityIndex = Math.max(0.001, Math.min(0.9999999, 1.0 / (1.0 + Math.exp(Math.max(-20, Math.min(20, (total_dG + 4.5)))))));
-    const aggregationPropensity = currentZn < 0.4 
+    const illustrativeAggregationScore = currentZn < 0.4 
       ? Math.min(0.99, (0.4 - currentZn) * 1.5 + (currentTemp > 42 ? 0.4 : 0.05))
       : (currentTemp > 45 ? 0.75 : 0.000000001);
 
     return {
       status: "RESOLVED",
-      summary: `MECHANISTIC PROTEIN RECONSTRUCTION: Conformational ensemble analysis of sovereign attractor state. Solvation free energy ΔG calculated via Poisson-Boltzmann electrostatic continuum and solvent-accessible surface area (SASA). At T=${currentTemp.toFixed(1)}°C and [Zn]=${(currentZn * 100).toFixed(0)}%, net folding ΔG is ${total_dG.toFixed(2)} kcal/mol with backbone RMSD of ${rmsd.toFixed(2)} Å. Kinetic trapping locked into minimum RMSD native fold.`,
+      resultClass: "illustrative",
+      method: "legacy-formula-illustration-v0",
+      summary: `ILLUSTRATIVE protein heuristic only: no sequence-specific structure, force field, Poisson–Boltzmann solver, SASA calculation, conformational sampling, or coordinate-derived RMSD is executed in this path.`,
       states: [
         {
-          label: "S0_Sovereign_Attractor",
+          label: "Illustrative_Protein_Score_A",
           metrics: [
-            { name: "Gibbs Free Energy", value: total_dG.toFixed(2), unit: "kcal/mol" },
-            { name: "Backbone RMSD", value: rmsd.toFixed(2), unit: "Å" },
-            { name: "Folding Frequency", value: Math.round(1250 * (310.15 / (currentTemp + 273.15))).toString(), unit: "Hz" }
+            { name: "Illustrative energy-like score", value: illustrativeEnergyScore.toFixed(2), unit: "arbitrary score" },
+            { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
+            { name: "Illustrative frequency score", value: Math.round(1250 * (310.15 / (currentTemp + 273.15))).toString(), unit: "arbitrary score" }
           ]
         },
         {
-          label: "S1_Intermediate_Lapsed",
+          label: "Illustrative_Protein_Score_B",
           metrics: [
-            { name: "Gibbs Free Energy", value: (total_dG + 9.9).toFixed(2), unit: "kcal/mol" },
-            { name: "Backbone RMSD", value: (rmsd + 1.84).toFixed(2), unit: "Å" },
-            { name: "Membrane Voltage Shift", value: (-14.2 * currentZn).toFixed(1), unit: "mV" }
+            { name: "Illustrative intermediate energy-like score", value: (illustrativeEnergyScore + 9.9).toFixed(2), unit: "arbitrary score" },
+            { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
+            { name: "Illustrative voltage score", value: (-14.2 * currentZn).toFixed(1), unit: "arbitrary score" }
           ]
         }
       ],
       transitions: [
-        { from: "S1_Intermediate_Lapsed", to: "S0_Sovereign_Attractor", probability: stabilityIndex.toFixed(4) }
+        { from: "Illustrative_Protein_Score_B", to: "Illustrative_Protein_Score_A", probability: "Not calibrated" }
       ],
       deterministicSteps: [
-        "1. [DOMAIN RESET] Isolate query context to Biophysical Protein Dynamics.",
-        "2. Discard previous FEA and neural network context.",
-        `3. Compute continuum electrostatics: ΔG_hydrophobic=${dG_hydrophobic.toFixed(2)}, ΔG_zn=${dG_zn_coordination.toFixed(2)}, ΔS_penalty=${dG_entropy_penalty.toFixed(2)}.`,
-        `4. Total ΔG = ${total_dG.toFixed(2)} kcal/mol. Kinetic lock stability index: ${(stabilityIndex * 100).toFixed(2)}%.`
+        "1. Classified the request as a biology/protein heuristic.",
+        "2. Used a fixed residue count of 393; this path does not consume a sequence or structure.",
+        "3. Evaluated a toy scalar formula; its terms are not physical free-energy components.",
+        "4. Coordinate-derived RMSD and calibrated transition probabilities are unavailable in this heuristic path.",
       ],
-      deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+      deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: BIOLOGY / PROTEIN BIOPHYSICS]
 
 import numpy as np
 
-def compute_folding_energy(residue_count=${residueCount}, zn_conc=${currentZn}, temp_c=${currentTemp}):
+def illustrative_folding_formula(residue_count=${residueCount}, zn_conc=${currentZn}, temp_c=${currentTemp}):
     """
-    Computes p53 sovereign core folding stability using continuum electrostatics.
-    Coupled to temperature (${currentTemp} C) and zinc cation concentration (${currentZn}).
+    Demonstrates a toy scalar formula only; it is not a physical free-energy model.
+    The result is not a fold, stability prediction, or coordinate-derived RMSD.
     """
-    dG_hydrophobic = -0.025 * residue_count
-    dG_zn_coordination = -3.8 * min(1.0, zn_conc)
-    dG_entropy_penalty = 0.018 * residue_count * ((temp_c + 273.15) / 298.15)
-    thermal_penalty = 0.35 * ((temp_c - 42) ** 1.5) if temp_c > 42 else 0.0
-    
-    total_dG = dG_hydrophobic + dG_zn_coordination + dG_entropy_penalty + thermal_penalty
-    rmsd = 0.08 if total_dG < -6.0 else (0.85 if total_dG < -2.0 else 1.92)
-    stability = 1.0 / (1.0 + np.exp(total_dG + 4.5))
+    hydrophobic_like_score = -0.025 * residue_count
+    zinc_like_score = -3.8 * min(1.0, zn_conc)
+    temperature_like_penalty = 0.018 * residue_count * ((temp_c + 273.15) / 298.15)
+    thermal_like_penalty = 0.35 * ((temp_c - 42) ** 1.5) if temp_c > 42 else 0.0
+    illustrative_energy_score = hydrophobic_like_score + zinc_like_score + temperature_like_penalty + thermal_like_penalty
     
     return {
         "domain": "BIOLOGY",
-        "dG_kcal_mol": round(float(total_dG), 2),
-        "rmsd_angstrom": round(float(rmsd), 2),
-        "stability_index": round(float(stability), 6),
-        "aggregation_propensity": round(float(${aggregationPropensity}), 6)
+        "illustrative_energy_score": round(float(illustrative_energy_score), 2),
+        "coordinate_derived_rmsd": None,
+        "stability_prediction": None,
+        "illustrative_aggregation_score": round(float(${illustrativeAggregationScore}), 6)
     }
 
 if __name__ == "__main__":
-    out = compute_folding_energy()
-    print("Protein Conformational Stability:", out)
+    out = illustrative_folding_formula()
+    print("Illustrative protein formula output:", out)
 `
     };
   }
@@ -237,44 +236,45 @@ if __name__ == "__main__":
 
     return {
       status: "RESOLVED",
-      summary: `MECHANISTIC STRUCTURAL FEA & TOPOLOGY OPTIMIZATION: Linear elastic finite-element equilibrium computed via Ku = f. Topology optimization performed using Solid Isotropic Material with Penalization (SIMP) with penalization parameter p=${penal.toFixed(1)} and volume fraction constraint Vf <= ${(volfrac * 100).toFixed(1)}%. Strain energy compliance minimized across load paths to ${optimizedCompliance.toFixed(2)} Joules.`,
+      resultClass: "illustrative",
+      method: "legacy-formula-illustration-v0",
+      summary: `ILLUSTRATIVE engineering formula only: no mesh, finite-element stiffness matrix, numerical equilibrium solve, or iterative SIMP optimization is executed.`,
       states: [
         {
-          label: "S0_Optimized_Topology",
+          label: "Illustrative_Engineering_Score_A",
           metrics: [
-            { name: "Compliance", value: optimizedCompliance.toFixed(2), unit: "Joules" },
-            { name: "Volume Fraction", value: (volfrac * 100).toFixed(1), unit: "%" },
-            { name: "Max Von Mises Stress", value: maxStressMpa.toFixed(1), unit: "MPa" }
+            { name: "Illustrative compliance score", value: optimizedCompliance.toFixed(2), unit: "arbitrary score" },
+            { name: "Requested volume fraction", value: (volfrac * 100).toFixed(1), unit: "% (input)" },
+            { name: "Illustrative stress score", value: maxStressMpa.toFixed(1), unit: "arbitrary score" }
           ]
         },
         {
-          label: "S1_Initial_Solid_Mesh",
+          label: "Illustrative_Engineering_Score_B",
           metrics: [
-            { name: "Compliance", value: initialCompliance.toFixed(2), unit: "Joules" },
-            { name: "Volume Fraction", value: "100.0", unit: "%" },
-            { name: "Max Von Mises Stress", value: "310.2", unit: "MPa" }
+            { name: "Illustrative baseline compliance score", value: initialCompliance.toFixed(2), unit: "arbitrary score" },
+            { name: "Illustrative baseline volume fraction", value: "100.0", unit: "% (illustration)" },
+            { name: "Illustrative baseline stress score", value: "310.2", unit: "arbitrary score" }
           ]
         }
       ],
       transitions: [
-        { from: "S1_Initial_Solid_Mesh", to: "S0_Optimized_Topology", probability: "1.0" }
+        { from: "Illustrative_Engineering_Score_B", to: "Illustrative_Engineering_Score_A", probability: "Not calibrated" }
       ],
       deterministicSteps: [
-        "1. [DOMAIN RESET] Isolate query context to Structural Mechanics & Finite Element Analysis.",
-        "2. Discard previous biological and genomic code models completely.",
-        `3. Assemble global element stiffness matrix K (${nelx * nely} bilinear Q4 elements).`,
-        `4. Solve SIMP optimality criteria: C_opt = ${optimizedCompliance.toFixed(2)} Joules, Von Mises = ${maxStressMpa.toFixed(1)} MPa.`
+        "1. Classified the request using deterministic keyword rules.",
+        "2. Parsed or defaulted a small set of scalar parameters.",
+        "3. Evaluated a closed-form illustration; no mesh or finite-element solver ran.",
+        "4. The result is not a validated structural or topology-optimization result.",
       ],
-      deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+      deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: ENGINEERING / STRUCTURAL FEA & TOPOLOGY]
 
 import numpy as np
 
-def solve_topology_optimization(nelx=${nelx}, nely=${nely}, volfrac=${volfrac}, penal=${penal}):
+def illustrative_topology_formula(nelx=${nelx}, nely=${nely}, volfrac=${volfrac}, penal=${penal}):
     """
-    Deterministic 2D SIMP Cantilever Topology Optimization.
-    Minimizes compliance c = U^T * K * U subject to volume fraction limit.
+    Toy scalar formula only; no mesh, stiffness matrix, finite-element solve, or iterative SIMP optimizer is implemented.
     """
     E0 = 1.0  # Young's modulus for solid material
     Emin = 1e-9  # Void modulus to prevent singularity
@@ -296,8 +296,8 @@ def solve_topology_optimization(nelx=${nelx}, nely=${nely}, volfrac=${volfrac}, 
     }
 
 if __name__ == "__main__":
-    res = solve_topology_optimization()
-    print("Deterministic Structural Optimization:", res)
+    res = illustrative_topology_formula()
+    print("Illustrative topology formula:", res)
 `
     };
   }
@@ -315,44 +315,45 @@ if __name__ == "__main__":
 
     return {
       status: "RESOLVED",
-      summary: `MECHANISTIC STATISTICAL LEARNING RESOLUTION: Optimization trajectory over high-dimensional non-convex loss manifold. Minimax gradient dynamics stabilized via spectral norm clipping and Adam momentum tracking across ${steps} steps. Converged loss: ${finalLoss.toFixed(3)} nats; test accuracy: ${accuracy.toFixed(1)}%.`,
+      resultClass: "illustrative",
+      method: "legacy-formula-illustration-v0",
+      summary: `ILLUSTRATIVE loss-curve formula only: no neural network is trained, no dataset is evaluated, and no measured accuracy is produced.`,
       states: [
         {
-          label: "AI0_Converged_Minima",
+          label: "Illustrative_Loss_Score_A",
           metrics: [
-            { name: "Loss", value: finalLoss.toFixed(3), unit: "nats" },
-            { name: "Accuracy", value: accuracy.toFixed(1), unit: "%" },
-            { name: "Latency", value: "4.2", unit: "ms" }
+            { name: "Illustrative loss score", value: finalLoss.toFixed(3), unit: "arbitrary score" },
+            { name: "Illustrative accuracy placeholder", value: accuracy.toFixed(1), unit: "not measured" },
+            { name: "Illustrative latency placeholder", value: "4.2", unit: "not measured" }
           ]
         },
         {
-          label: "AI1_Initialization_State",
+          label: "Illustrative_Loss_Score_B",
           metrics: [
-            { name: "Loss", value: initialLoss.toFixed(2), unit: "nats" },
-            { name: "Accuracy", value: "11.2", unit: "%" },
-            { name: "Latency", value: "4.1", unit: "ms" }
+            { name: "Illustrative initial loss score", value: initialLoss.toFixed(2), unit: "arbitrary score" },
+            { name: "Illustrative initial accuracy placeholder", value: "11.2", unit: "not measured" },
+            { name: "Illustrative initial latency placeholder", value: "4.1", unit: "not measured" }
           ]
         }
       ],
       transitions: [
-        { from: "AI1_Initialization_State", to: "AI0_Converged_Minima", probability: "0.992" }
+        { from: "Illustrative_Loss_Score_B", to: "Illustrative_Loss_Score_A", probability: "Not calibrated" }
       ],
       deterministicSteps: [
-        "1. [DOMAIN RESET] Isolate query context to Machine Learning & Optimization Theory.",
-        "2. Discard previous engineering FEA and biological code entirely.",
-        `3. Compute empirical risk expectation under Dirichlet prior across ${steps} optimization steps.`,
-        `4. Formulate Hessian eigenspectrum: Loss=${finalLoss.toFixed(3)} nats, Accuracy=${accuracy.toFixed(1)}%, MI=${mutualInfo.toFixed(1)} bits.`
+        "1. Classified the request using deterministic keyword rules.",
+        "2. Selected fixed illustrative loss-curve parameters.",
+        "3. Evaluated a preset equation; no model training or dataset evaluation ran.",
+        "4. No measured accuracy or generalization estimate is produced.",
       ],
-      deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+      deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: AI / MACHINE LEARNING & INFORMATION THEORY]
 
 import numpy as np
 
-def compute_loss_trajectory(steps=${steps}, lr=1e-3):
+def illustrative_loss_curve(steps=${steps}, lr=1e-3):
     """
-    Deterministic convergence model for deep representation learning.
-    Loss measured strictly in nats; latency in milliseconds.
+    Toy equation demonstration only; no training, dataset evaluation, measured loss, accuracy, or latency is produced.
     """
     initial_loss = 2.31 # nats
     decay_rate = 0.0038
@@ -368,13 +369,13 @@ def compute_loss_trajectory(steps=${steps}, lr=1e-3):
     }
 
 if __name__ == "__main__":
-    out = compute_loss_trajectory()
-    print("Machine Learning Trajectory:", out)
+    out = illustrative_loss_curve()
+    print("Illustrative loss-curve example:", out)
 `
     };
   }
 
-  // 5. PHYSICS DOMAIN (Tokamak Plasma Grad-Shafranov)
+  // 5. PHYSICS DOMAIN (illustrative plasma formulas; no Grad–Shafranov solver)
   const bMatch = command.match(/B(?:_toroidal)?\s*[:=]\s*([\d.]+)/i);
   const B_toroidal = bMatch ? parseFloat(bMatch[1]) : 5.3;
 
@@ -389,43 +390,45 @@ if __name__ == "__main__":
 
   return {
     status: "RESOLVED",
-    summary: `MECHANISTIC PLASMA EQUILIBRIUM: Grad-Shafranov solution for toroidal magnetic confinement (B=${B_toroidal.toFixed(1)} T, Ip=${plasmaCurrentMA.toFixed(1)} MA). Plasma beta limit computed within Troyon envelope (${betaLimitPct.toFixed(2)}%) to suppress ballooning and tearing instabilities. Energy confinement time scaled via ITER98(y,2) empirical law to ${tauE.toFixed(2)} s.`,
+    resultClass: "illustrative",
+    method: "legacy-formula-illustration-v0",
+    summary: `ILLUSTRATIVE plasma estimates only: no Grad–Shafranov equilibrium solver or independently validated plasma-stability calculation is executed.`,
     states: [
       {
-        label: "P0_Quiescent_H_Mode",
+        label: "Illustrative_Plasma_Score_A",
         metrics: [
-          { name: "Core Ion Temperature", value: coreTempKeV.toFixed(1), unit: "keV" },
-          { name: "Confinement Time", value: tauE.toFixed(2), unit: "s" },
-          { name: "Toroidal Field", value: B_toroidal.toFixed(1), unit: "Tesla" }
+          { name: "Illustrative core-temperature estimate", value: coreTempKeV.toFixed(1), unit: "keV (unvalidated)" },
+          { name: "Illustrative confinement-time estimate", value: tauE.toFixed(2), unit: "s (unvalidated)" },
+          { name: "Illustrative toroidal-field estimate", value: B_toroidal.toFixed(1), unit: "T (unvalidated)" }
         ]
       },
       {
-        label: "P1_Near_Disruptive_Beta",
+        label: "Illustrative_Plasma_Score_B",
         metrics: [
-          { name: "Core Ion Temperature", value: (coreTempKeV * 0.55).toFixed(1), unit: "keV" },
-          { name: "Confinement Time", value: (tauE * 0.33).toFixed(2), unit: "s" },
-          { name: "Toroidal Field", value: (B_toroidal * 0.96).toFixed(1), unit: "Tesla" }
+          { name: "Illustrative perturbed core-temperature estimate", value: (coreTempKeV * 0.55).toFixed(1), unit: "keV (unvalidated)" },
+          { name: "Illustrative perturbed confinement-time estimate", value: (tauE * 0.33).toFixed(2), unit: "s (unvalidated)" },
+          { name: "Illustrative perturbed toroidal-field estimate", value: (B_toroidal * 0.96).toFixed(1), unit: "T (unvalidated)" }
         ]
       }
     ],
     transitions: [
-      { from: "P1_Near_Disruptive_Beta", to: "P0_Quiescent_H_Mode", probability: "0.91" }
+      { from: "Illustrative_Plasma_Score_B", to: "Illustrative_Plasma_Score_A", probability: "Not calibrated" }
     ],
     deterministicSteps: [
-      "1. [DOMAIN RESET] Isolate query context to Plasma Physics & Magnetohydrodynamics.",
-      "2. Discard previous code and domain contexts completely.",
-      `3. Solve 2D Grad-Shafranov poloidal flux equilibrium: B_t=${B_toroidal.toFixed(1)} T, I_p=${plasmaCurrentMA.toFixed(1)} MA.`,
-      `4. Troyon beta limit = ${betaLimitPct.toFixed(2)}%, Confinement tau_E = ${tauE.toFixed(2)} s.`
+      "1. Classified the request using deterministic keyword rules.",
+      "2. Parsed or defaulted a small set of scalar plasma parameters.",
+      "3. Evaluated algebraic estimates; no Grad–Shafranov solver ran.",
+      "4. Values are illustrative and are not validated equilibrium or stability predictions.",
     ],
-    deterministicCode: `# [PREVIOUS CODE DISCARDED]
-# [NEW DOMAIN CODE FOLLOWS]
+    deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
+# Simplified formulas; not a validated scientific solver.
 # [DOMAIN: PHYSICS / PLASMA CONFINEMENT & TOKAMAK]
 
 import numpy as np
 
-def compute_tokamak_equilibrium(B_toroidal=${B_toroidal}, plasma_current_MA=${plasmaCurrentMA}, minor_radius_m=${minorRadiusM}):
+def illustrative_plasma_formula(B_toroidal=${B_toroidal}, plasma_current_MA=${plasmaCurrentMA}, minor_radius_m=${minorRadiusM}):
     """
-    Computes plasma energy confinement time and Troyon beta limit.
+    Toy scaling illustration only; no equilibrium solver or validated stability calculation is implemented.
     """
     troyon_coefficient = 2.8
     beta_limit = troyon_coefficient * (plasma_current_MA / (minor_radius_m * B_toroidal))
@@ -443,8 +446,8 @@ def compute_tokamak_equilibrium(B_toroidal=${B_toroidal}, plasma_current_MA=${pl
     }
 
 if __name__ == "__main__":
-    out = compute_tokamak_equilibrium()
-    print("Plasma Confinement Solution:", out)
+    out = illustrative_plasma_formula()
+    print("Illustrative plasma formula:", out)
 `
   };
 }
@@ -463,7 +466,9 @@ export const compileDeterministicData = async (
   return {
     ...previousResolution,
     status: "RESOLVED",
+    resultClass: "illustrative",
+    method: "local-telemetry-compilation-v0",
     rawData,
-    summary: `[LOCAL COMPILATION] Deterministic telemetry synchronized across domain states.`
+    summary: `[ILLUSTRATIVE DATA COMPILATION] Telemetry fields were compiled; no scientific solver was executed.`
   };
 };

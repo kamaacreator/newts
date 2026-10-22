@@ -5,9 +5,9 @@ This optional sidecar implements the raw-text/PDB contract expected by Aetheris 
 ## Requirements
 
 - NVIDIA GPU with a compatible CUDA driver is recommended.
-- Docker image is based on the PyTorch 1.12.1 CUDA 11.3 development image because the ESMFold/OpenFold dependency stack is legacy and version-sensitive.
+- Docker image uses the PyTorch 2.0.0 CUDA 11.7 development image, with explicit ESM/OpenFold/dllogger pins and NumPy constrained below 2. The exact toolchain remains subject to the container-build CI and target-GPU smoke test.
 - First inference downloads model weights unless the Torch cache is pre-populated. Plan for several gigabytes of image, dependencies, and model cache, plus sufficient GPU VRAM.
-- The default request limit is 768 standard amino-acid residues. The service serializes inference to reduce concurrent GPU memory pressure.
+- The default request limit is 768 standard amino-acid residues. The service serializes actual model inference and caps in-flight requests at two; additional requests receive HTTP 429 with Retry-After rather than accumulating without bound.
 
 ## Build and run privately
 
@@ -49,7 +49,7 @@ The service does not persist submitted sequences or predicted structures. It val
 
 ## Validation before use
 
-CI tests exercise input validation, authentication, output parsing, and sequence matching with a known public 1UBQ fixture and a mocked model. CI does not download weights, build the CUDA image, or execute actual ESMFold inference. Before relying on the service, build it on the target host, execute a live prediction, verify GPU memory/runtime, and run the project's curated structural benchmark suite.
+CI tests exercise input validation, authentication, output parsing, sequence matching with a known public 1UBQ fixture, and overload rejection with a mocked model. CI also builds the CUDA image and runs a package-import smoke test. CI does not download model weights or execute actual ESMFold inference. Before relying on the service, build it on the target host, execute a live prediction, verify GPU memory/runtime, and run the project's curated structural benchmark suite.
 
 ## License and intended use
 
