@@ -67,7 +67,7 @@ export function generateLocalDeterministicResolution(
         summary: `ILLUSTRATIVE CRISPR heuristic only: values are generated from fixed constants and simplified equations. This is not a validated Cas9 kinetic model and does not predict experimental cleavage, HDR, or NHEJ outcomes.`,
         states: [
           {
-            label: "S0_PAM_Interrogation_Locked",
+            label: "Illustrative_Cas9_Stage_A",
             metrics: [
               { name: "Illustrative association score", value: "1.42e6", unit: "arbitrary score" },
               { name: "Illustrative binding score", value: total_dG.toFixed(2), unit: "arbitrary score" },
@@ -75,7 +75,7 @@ export function generateLocalDeterministicResolution(
             ]
           },
           {
-            label: "S1_Catalytic_R_Loop_Cleavage",
+            label: "Illustrative_Cas9_Stage_B",
             metrics: [
               { name: "Illustrative cleavage score", value: k_cleave.toFixed(3), unit: "arbitrary score" },
               { name: "ATP consumption", value: "Not calculated", unit: "not available" }, // Literature constant: Cas9 cleavage is ATP-independent
@@ -83,7 +83,7 @@ export function generateLocalDeterministicResolution(
             ]
           },
           {
-            label: "S2_Pathway_HDR_Resolution",
+            label: "Illustrative_Repair_Stage",
             metrics: [
               { name: "Illustrative HDR score", value: (hdrFraction * 100).toFixed(1), unit: "not calibrated" },
               { name: "Illustrative NHEJ score", value: nhejProb.toFixed(3), unit: "not calibrated" },
@@ -92,8 +92,8 @@ export function generateLocalDeterministicResolution(
           }
         ],
         transitions: [
-          { from: "S0_PAM_Interrogation_Locked", to: "S1_Catalytic_R_Loop_Cleavage", probability: "Not calibrated" },
-          { from: "S1_Catalytic_R_Loop_Cleavage", to: "S2_Pathway_HDR_Resolution", probability: "Not calibrated" }
+          { from: "Illustrative_Cas9_Stage_A", to: "Illustrative_Cas9_Stage_B", probability: "Not calibrated" },
+          { from: "Illustrative_Cas9_Stage_B", to: "Illustrative_Repair_Stage", probability: "Not calibrated" }
         ],
         deterministicSteps: [
           "1. Classified the request using deterministic keyword rules.",
@@ -161,7 +161,7 @@ if __name__ == "__main__":
       summary: `ILLUSTRATIVE protein heuristic only: no sequence-specific structure, force field, Poisson–Boltzmann solver, SASA calculation, conformational sampling, or coordinate-derived RMSD is executed in this path.`,
       states: [
         {
-          label: "S0_Sovereign_Attractor",
+          label: "Illustrative_Protein_Score_A",
           metrics: [
             { name: "Illustrative energy-like score", value: illustrativeEnergyScore.toFixed(2), unit: "arbitrary score" },
             { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
@@ -169,7 +169,7 @@ if __name__ == "__main__":
           ]
         },
         {
-          label: "S1_Intermediate_Lapsed",
+          label: "Illustrative_Protein_Score_B",
           metrics: [
             { name: "Illustrative intermediate energy-like score", value: (illustrativeEnergyScore + 9.9).toFixed(2), unit: "arbitrary score" },
             { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         }
       ],
       transitions: [
-        { from: "S1_Intermediate_Lapsed", to: "S0_Sovereign_Attractor", probability: "Not calibrated" }
+        { from: "Illustrative_Protein_Score_B", to: "Illustrative_Protein_Score_A", probability: "Not calibrated" }
       ],
       deterministicSteps: [
         "1. Classified the request as a biology/protein heuristic.",
@@ -241,7 +241,7 @@ if __name__ == "__main__":
       summary: `ILLUSTRATIVE engineering formula only: no mesh, finite-element stiffness matrix, numerical equilibrium solve, or iterative SIMP optimization is executed.`,
       states: [
         {
-          label: "S0_Optimized_Topology",
+          label: "Illustrative_Engineering_Score_A",
           metrics: [
             { name: "Illustrative compliance score", value: optimizedCompliance.toFixed(2), unit: "arbitrary score" },
             { name: "Requested volume fraction", value: (volfrac * 100).toFixed(1), unit: "% (input)" },
@@ -249,7 +249,7 @@ if __name__ == "__main__":
           ]
         },
         {
-          label: "S1_Initial_Solid_Mesh",
+          label: "Illustrative_Engineering_Score_B",
           metrics: [
             { name: "Illustrative baseline compliance score", value: initialCompliance.toFixed(2), unit: "arbitrary score" },
             { name: "Illustrative baseline volume fraction", value: "100.0", unit: "% (illustration)" },
@@ -258,7 +258,7 @@ if __name__ == "__main__":
         }
       ],
       transitions: [
-        { from: "S1_Initial_Solid_Mesh", to: "S0_Optimized_Topology", probability: "Not calibrated" }
+        { from: "Illustrative_Engineering_Score_B", to: "Illustrative_Engineering_Score_A", probability: "Not calibrated" }
       ],
       deterministicSteps: [
         "1. Classified the request using deterministic keyword rules.",
@@ -320,7 +320,7 @@ if __name__ == "__main__":
       summary: `ILLUSTRATIVE loss-curve formula only: no neural network is trained, no dataset is evaluated, and no measured accuracy is produced.`,
       states: [
         {
-          label: "AI0_Converged_Minima",
+          label: "Illustrative_Loss_Score_A",
           metrics: [
             { name: "Illustrative loss score", value: finalLoss.toFixed(3), unit: "arbitrary score" },
             { name: "Illustrative accuracy placeholder", value: accuracy.toFixed(1), unit: "not measured" },
@@ -328,7 +328,7 @@ if __name__ == "__main__":
           ]
         },
         {
-          label: "AI1_Initialization_State",
+          label: "Illustrative_Loss_Score_B",
           metrics: [
             { name: "Illustrative initial loss score", value: initialLoss.toFixed(2), unit: "arbitrary score" },
             { name: "Illustrative initial accuracy placeholder", value: "11.2", unit: "not measured" },
@@ -337,7 +337,7 @@ if __name__ == "__main__":
         }
       ],
       transitions: [
-        { from: "AI1_Initialization_State", to: "AI0_Converged_Minima", probability: "Not calibrated" }
+        { from: "Illustrative_Loss_Score_B", to: "Illustrative_Loss_Score_A", probability: "Not calibrated" }
       ],
       deterministicSteps: [
         "1. Classified the request using deterministic keyword rules.",
@@ -395,7 +395,7 @@ if __name__ == "__main__":
     summary: `ILLUSTRATIVE plasma estimates only: no Grad–Shafranov equilibrium solver or independently validated plasma-stability calculation is executed.`,
     states: [
       {
-        label: "P0_Quiescent_H_Mode",
+        label: "Illustrative_Plasma_Score_A",
         metrics: [
           { name: "Illustrative core-temperature estimate", value: coreTempKeV.toFixed(1), unit: "keV (unvalidated)" },
           { name: "Illustrative confinement-time estimate", value: tauE.toFixed(2), unit: "s (unvalidated)" },
@@ -403,7 +403,7 @@ if __name__ == "__main__":
         ]
       },
       {
-        label: "P1_Near_Disruptive_Beta",
+        label: "Illustrative_Plasma_Score_B",
         metrics: [
           { name: "Illustrative perturbed core-temperature estimate", value: (coreTempKeV * 0.55).toFixed(1), unit: "keV (unvalidated)" },
           { name: "Illustrative perturbed confinement-time estimate", value: (tauE * 0.33).toFixed(2), unit: "s (unvalidated)" },
@@ -412,7 +412,7 @@ if __name__ == "__main__":
       }
     ],
     transitions: [
-      { from: "P1_Near_Disruptive_Beta", to: "P0_Quiescent_H_Mode", probability: "Not calibrated" }
+      { from: "Illustrative_Plasma_Score_B", to: "Illustrative_Plasma_Score_A", probability: "Not calibrated" }
     ],
     deterministicSteps: [
       "1. Classified the request using deterministic keyword rules.",
