@@ -652,7 +652,7 @@ app.post('/api/agent/commands', async (req, res) => {
   const resId = (Date.now() + 1).toString();
   const resEntry: TerminalEntry = { id: resId, type: 'RESOLUTION', content: finalResult, timestamp: new Date() };
 
-  // Update entity metrics directly from real deterministic calculation
+  // Only explicitly computed outputs may update scientific entity metrics.
   const activeEntity = engine.entities.find(e => e.id === newActiveEntityId);
   // Illustrative heuristics must never overwrite the engine's scientific state.
   if (activeEntity && finalResult.resultClass === 'computed' && finalResult.states.length > 0) {
