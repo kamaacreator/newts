@@ -654,7 +654,8 @@ app.post('/api/agent/commands', async (req, res) => {
 
   // Update entity metrics directly from real deterministic calculation
   const activeEntity = engine.entities.find(e => e.id === newActiveEntityId);
-  if (activeEntity && finalResult.states.length > 0) {
+  // Illustrative heuristics must never overwrite the engine's scientific state.
+  if (activeEntity && finalResult.resultClass === 'computed' && finalResult.states.length > 0) {
     const s0 = finalResult.states[0];
     const s0Metrics = s0.metrics;
     if (targetDomain === 'BIOLOGY') {
@@ -674,7 +675,7 @@ app.post('/api/agent/commands', async (req, res) => {
   }
 
   engine.terminalHistory = [resEntry, entry, ...engine.terminalHistory];
-  engine.logs.unshift(`[COMPUTATION] Calculation path completed. Domain: ${targetDomain}`);
+  engine.logs.unshift(`[RESULT] ${finalResult.resultClass ?? 'unclassified'} result produced. Domain: ${targetDomain}`);
   engine.logs.unshift(`[CMD] Execution request: ${cleanCmd}`);
   engine.logicalTime += 1;
 
