@@ -143,17 +143,15 @@ if __name__ == "__main__":
 
     // Default Protein Folding / Biophysics (p53 Sovereign Attractor)
     const residueCount = 393;
-    const dG_hydrophobic = -0.025 * residueCount; // -9.825 kcal/mol
-    const dG_zn_coordination = -3.8 * Math.min(1.0, currentZn);
-    const dG_entropy_penalty = 0.018 * residueCount * ((currentTemp + 273.15) / 298.15);
+    const hydrophobicLikeScore = -0.025 * residueCount;
+    const zincLikeScore = -3.8 * Math.min(1.0, currentZn);
+    const temperatureLikePenalty = 0.018 * residueCount * ((currentTemp + 273.15) / 298.15);
     
     // Thermal denaturation penalty above physiological 42°C
-    const thermalDenaturation = currentTemp > 42 ? 0.35 * Math.pow(currentTemp - 42, 1.5) : 0;
-    const total_dG = dG_hydrophobic + dG_zn_coordination + dG_entropy_penalty + thermalDenaturation;
+    const thermalLikePenalty = currentTemp > 42 ? 0.35 * Math.pow(currentTemp - 42, 1.5) : 0;
+    const illustrativeEnergyScore = hydrophobicLikeScore + zincLikeScore + temperatureLikePenalty + thermalLikePenalty;
     
-    const rmsd = total_dG < -6.0 ? 0.08 : (total_dG < -2.0 ? 0.85 : 1.92 + (currentTemp > 42 ? 0.05 * (currentTemp - 42) : 0));
-    const stabilityIndex = Math.max(0.001, Math.min(0.9999999, 1.0 / (1.0 + Math.exp(Math.max(-20, Math.min(20, (total_dG + 4.5)))))));
-    const aggregationPropensity = currentZn < 0.4 
+    const illustrativeAggregationScore = currentZn < 0.4 
       ? Math.min(0.99, (0.4 - currentZn) * 1.5 + (currentTemp > 42 ? 0.4 : 0.05))
       : (currentTemp > 45 ? 0.75 : 0.000000001);
 
@@ -166,28 +164,28 @@ if __name__ == "__main__":
         {
           label: "S0_Sovereign_Attractor",
           metrics: [
-            { name: "Gibbs Free Energy", value: total_dG.toFixed(2), unit: "kcal/mol" },
-            { name: "Backbone RMSD", value: rmsd.toFixed(2), unit: "Å" },
-            { name: "Folding Frequency", value: Math.round(1250 * (310.15 / (currentTemp + 273.15))).toString(), unit: "Hz" }
+            { name: "Gibbs Free Energy", value: illustrativeEnergyScore.toFixed(2), unit: "arbitrary score" },
+            { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
+            { name: "Illustrative frequency score", value: Math.round(1250 * (310.15 / (currentTemp + 273.15))).toString(), unit: "arbitrary score" }
           ]
         },
         {
           label: "S1_Intermediate_Lapsed",
           metrics: [
-            { name: "Gibbs Free Energy", value: (total_dG + 9.9).toFixed(2), unit: "kcal/mol" },
-            { name: "Backbone RMSD", value: (rmsd + 1.84).toFixed(2), unit: "Å" },
-            { name: "Membrane Voltage Shift", value: (-14.2 * currentZn).toFixed(1), unit: "mV" }
+            { name: "Gibbs Free Energy", value: (illustrativeEnergyScore + 9.9).toFixed(2), unit: "arbitrary score" },
+            { name: "Coordinate-derived RMSD", value: "Not calculated", unit: "not available" },
+            { name: "Illustrative voltage score", value: (-14.2 * currentZn).toFixed(1), unit: "arbitrary score" }
           ]
         }
       ],
       transitions: [
-        { from: "S1_Intermediate_Lapsed", to: "S0_Sovereign_Attractor", probability: stabilityIndex.toFixed(4) }
+        { from: "S1_Intermediate_Lapsed", to: "S0_Sovereign_Attractor", probability: "Not calibrated" }
       ],
       deterministicSteps: [
         "1. Classified the request as a biology/protein heuristic.",
         "2. Used a fixed residue count of 393; this path does not consume a sequence or structure.",
-        "3. Evaluated simplified energy-like terms; no force field, electrostatics, SASA, or ensemble simulation ran.",
-        "4. RMSD is selected by thresholds and is not calculated from coordinates.",
+        "3. Evaluated a toy scalar formula; its terms are not physical free-energy components.",
+        "4. Coordinate-derived RMSD and calibrated transition probabilities are unavailable in this heuristic path.",
       ],
       deterministicCode: `# ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS
 # Simplified formulas; not a validated scientific solver.
@@ -195,30 +193,27 @@ if __name__ == "__main__":
 
 import numpy as np
 
-def compute_folding_energy(residue_count=${residueCount}, zn_conc=${currentZn}, temp_c=${currentTemp}):
+def illustrative_folding_formula(residue_count=${residueCount}, zn_conc=${currentZn}, temp_c=${currentTemp}):
     """
-    Computes p53 sovereign core folding stability using continuum electrostatics.
-    Coupled to temperature (${currentTemp} C) and zinc cation concentration (${currentZn}).
+    Demonstrates a toy scalar formula only; it is not a physical free-energy model.
+    The result is not a fold, stability prediction, or coordinate-derived RMSD.
     """
-    dG_hydrophobic = -0.025 * residue_count
-    dG_zn_coordination = -3.8 * min(1.0, zn_conc)
-    dG_entropy_penalty = 0.018 * residue_count * ((temp_c + 273.15) / 298.15)
-    thermal_penalty = 0.35 * ((temp_c - 42) ** 1.5) if temp_c > 42 else 0.0
-    
-    total_dG = dG_hydrophobic + dG_zn_coordination + dG_entropy_penalty + thermal_penalty
-    rmsd = 0.08 if total_dG < -6.0 else (0.85 if total_dG < -2.0 else 1.92)
-    stability = 1.0 / (1.0 + np.exp(total_dG + 4.5))
+    hydrophobic_like_score = -0.025 * residue_count
+    zinc_like_score = -3.8 * min(1.0, zn_conc)
+    temperature_like_penalty = 0.018 * residue_count * ((temp_c + 273.15) / 298.15)
+    thermal_like_penalty = 0.35 * ((temp_c - 42) ** 1.5) if temp_c > 42 else 0.0
+    illustrative_energy_score = hydrophobic_like_score + zinc_like_score + temperature_like_penalty + thermal_like_penalty
     
     return {
         "domain": "BIOLOGY",
-        "dG_kcal_mol": round(float(total_dG), 2),
-        "rmsd_angstrom": round(float(rmsd), 2),
-        "stability_index": round(float(stability), 6),
-        "aggregation_propensity": round(float(${aggregationPropensity}), 6)
+        "illustrative_energy_score": round(float(illustrative_energy_score), 2),
+        "coordinate_derived_rmsd": None,
+        "stability_prediction": None,
+        "illustrative_aggregation_score": round(float(${illustrativeAggregationScore}), 6)
     }
 
 if __name__ == "__main__":
-    out = compute_folding_energy()
+    out = illustrative_folding_formula()
     print("Protein Conformational Stability:", out)
 `
     };
