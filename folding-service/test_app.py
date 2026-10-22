@@ -96,9 +96,14 @@ class FoldingServiceTests(unittest.TestCase):
             service_module.MODEL = None
 
     def test_rejects_multichain_pdb_output(self):
+        ca_lines = [
+            line for line in UBIQUITIN_PDB.splitlines()
+            if line.startswith("ATOM") and line[12:16].strip() == "CA"
+        ][:2]
+        self.assertEqual(len(ca_lines), 2)
         two_chain_pdb = "\\n".join([
-            UBIQUITIN_PDB.splitlines()[0][:21] + "A" + UBIQUITIN_PDB.splitlines()[0][22:],
-            UBIQUITIN_PDB.splitlines()[1][:21] + "B" + UBIQUITIN_PDB.splitlines()[1][22:],
+            ca_lines[0][:21] + "A" + ca_lines[0][22:],
+            ca_lines[1][:21] + "B" + ca_lines[1][22:],
             "END",
         ])
         with self.assertRaisesRegex(ValueError, "single-chain"):
