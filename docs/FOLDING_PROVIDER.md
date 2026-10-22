@@ -42,8 +42,8 @@ The repository includes `folding-service/benchmark_predictions.py`, a manifest-d
 Example manifest columns:
 
 ```csv
-target_id,sequence,reference_pdb,predicted_pdb,reference_chain,predicted_chain
-target-a,ACDEFGHIK,refs/target-a.pdb,predictions/target-a.pdb,A,A
+target_id,sequence,reference_pdb,predicted_pdb,provider,model_id,prediction_method,prediction_date,reference_chain,predicted_chain
+target-a,ACDEFGHIK,refs/target-a.pdb,predictions/target-a.pdb,self-hosted,esmfold_v1,esmfold-v1,2026-10-22T00:00:00Z,A,A
 ```
 
 Run it with:
@@ -55,7 +55,7 @@ python folding-service/benchmark_predictions.py \
   --summary benchmark/summary.json
 ```
 
-The harness uses a single global C-alpha fit. Its distance-threshold fractions are not GDT-TS, and it does not calculate TM-score. Use a validated TM-align/US-align implementation for standard TM-score reporting. Predicted B-factor fields are reported without assuming they are calibrated confidence. A real curated evaluation set, leakage assessment, predeclared acceptance thresholds, and independent review are still required.
+Each manifest must identify one provider/model/method version; mixed-model aggregates are rejected. The output includes the manifest and PDB SHA-256 hashes. The harness uses a single global C-alpha fit. Its distance-threshold fractions are not GDT-TS, and it does not calculate TM-score. Use a validated TM-align/US-align implementation for standard TM-score reporting. Predicted B-factor fields are reported without assuming they are calibrated confidence. A real curated evaluation set, leakage assessment, predeclared acceptance thresholds, and independent review are still required.
 
 ## Data handling and release gates
 
