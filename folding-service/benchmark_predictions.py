@@ -267,7 +267,7 @@ def run_benchmark(manifest_path: Path, output_csv: Path, summary_json: Path) -> 
         "provider": rows[0]["provider"],
         "model_id": rows[0]["model_id"],
         "prediction_method": rows[0]["prediction_method"],
-        "prediction_date": rows[0]["prediction_date"],
+        "prediction_dates": sorted({str(row["prediction_date"]) for row in rows if str(row["prediction_date"])}),
         "manifest_sha256": _sha256_file(manifest_path),
         "results_csv_sha256": _sha256_file(output_csv),
         "target_count": len(rows),
