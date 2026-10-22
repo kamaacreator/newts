@@ -39,6 +39,17 @@ jobs:
       - name: Prototype regression tests
         run: npm test
 
+      - name: Set up Python for independent structural reference
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install independent structural alignment implementation
+        run: python -m pip install biopython==1.83
+
+      - name: Cross-check RMSD against Biopython Kabsch superposition
+        run: python tests/independent_rmsd_validation.py
+
       - name: Production build
         run: npm run build
 
