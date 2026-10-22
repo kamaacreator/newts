@@ -1,6 +1,6 @@
 # Production authentication and deployment safety
 
-Production mode is selected by `NODE_ENV=production`. In production, every `/api/agent/*` route requires a valid signed session cookie. The API fails closed if credentials or a sufficiently strong session secret are missing.
+Production mode is selected by `NODE_ENV=production`. In production, every `/api/agent/*` route requires a valid signed session cookie. The API fails closed if credentials or a sufficiently strong session secret are missing. Sessions are unique, revocable, and stored in process memory; process restart invalidates all sessions.
 
 Configure these environment variables in the deployment platform's secret/environment settings (do not commit real values):
 
