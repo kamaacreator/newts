@@ -69,31 +69,31 @@ export function generateLocalDeterministicResolution(
           {
             label: "S0_PAM_Interrogation_Locked",
             metrics: [
-              { name: "Association Rate (kon)", value: "1.42e6", unit: "mM/s" },
-              { name: "Binding Free Energy", value: total_dG.toFixed(2), unit: "kcal/mol" },
-              { name: "Unwinding Time", value: unwindingTimeMs.toFixed(1), unit: "ms" }
+              { name: "Illustrative association score", value: "1.42e6", unit: "arbitrary score" },
+              { name: "Illustrative binding score", value: total_dG.toFixed(2), unit: "arbitrary score" },
+              { name: "Illustrative unwinding score", value: unwindingTimeMs.toFixed(1), unit: "arbitrary score" }
             ]
           },
           {
             label: "S1_Catalytic_R_Loop_Cleavage",
             metrics: [
-              { name: "Cleavage Rate (kcat)", value: k_cleave.toFixed(3), unit: "Hz" },
-              { name: "Cellular ATP Consumption", value: "0.0", unit: "ATP" }, // Literature constant: Cas9 cleavage is ATP-independent
-              { name: "R-Loop Length", value: `${guideLength}.0`, unit: "Å" }
+              { name: "Illustrative cleavage score", value: k_cleave.toFixed(3), unit: "arbitrary score" },
+              { name: "ATP consumption", value: "Not calculated", unit: "not available" }, // Literature constant: Cas9 cleavage is ATP-independent
+              { name: "Guide Length", value: guideLength, unit: "residues" }
             ]
           },
           {
             label: "S2_Pathway_HDR_Resolution",
             metrics: [
-              { name: "HDR Efficiency", value: (hdrFraction * 100).toFixed(1), unit: "%" },
-              { name: "NHEJ Translocation Probability", value: nhejProb.toFixed(3), unit: "prob" },
-              { name: "Resection Velocity", value: (4.1 * (T_kelvin / 310.15)).toFixed(2), unit: "mM/s" }
+              { name: "Illustrative HDR score", value: (hdrFraction * 100).toFixed(1), unit: "not calibrated" },
+              { name: "Illustrative NHEJ score", value: nhejProb.toFixed(3), unit: "not calibrated" },
+              { name: "Illustrative resection score", value: (4.1 * (T_kelvin / 310.15)).toFixed(2), unit: "arbitrary score" }
             ]
           }
         ],
         transitions: [
-          { from: "S0_PAM_Interrogation_Locked", to: "S1_Catalytic_R_Loop_Cleavage", probability: "0.94" },
-          { from: "S1_Catalytic_R_Loop_Cleavage", to: "S2_Pathway_HDR_Resolution", probability: hdrFraction.toFixed(2) }
+          { from: "S0_PAM_Interrogation_Locked", to: "S1_Catalytic_R_Loop_Cleavage", probability: "Not calibrated" },
+          { from: "S1_Catalytic_R_Loop_Cleavage", to: "S2_Pathway_HDR_Resolution", probability: "Not calibrated" }
         ],
         deterministicSteps: [
           "1. Classified the request using deterministic keyword rules.",
@@ -244,22 +244,22 @@ if __name__ == "__main__":
         {
           label: "S0_Optimized_Topology",
           metrics: [
-            { name: "Compliance", value: optimizedCompliance.toFixed(2), unit: "Joules" },
-            { name: "Volume Fraction", value: (volfrac * 100).toFixed(1), unit: "%" },
-            { name: "Max Von Mises Stress", value: maxStressMpa.toFixed(1), unit: "MPa" }
+            { name: "Illustrative compliance score", value: optimizedCompliance.toFixed(2), unit: "arbitrary score" },
+            { name: "Requested volume fraction", value: (volfrac * 100).toFixed(1), unit: "% (input)" },
+            { name: "Illustrative stress score", value: maxStressMpa.toFixed(1), unit: "arbitrary score" }
           ]
         },
         {
           label: "S1_Initial_Solid_Mesh",
           metrics: [
-            { name: "Compliance", value: initialCompliance.toFixed(2), unit: "Joules" },
-            { name: "Volume Fraction", value: "100.0", unit: "%" },
-            { name: "Max Von Mises Stress", value: "310.2", unit: "MPa" }
+            { name: "Illustrative baseline compliance score", value: initialCompliance.toFixed(2), unit: "arbitrary score" },
+            { name: "Illustrative baseline volume fraction", value: "100.0", unit: "% (illustration)" },
+            { name: "Illustrative baseline stress score", value: "310.2", unit: "arbitrary score" }
           ]
         }
       ],
       transitions: [
-        { from: "S1_Initial_Solid_Mesh", to: "S0_Optimized_Topology", probability: "1.0" }
+        { from: "S1_Initial_Solid_Mesh", to: "S0_Optimized_Topology", probability: "Not calibrated" }
       ],
       deterministicSteps: [
         "1. Classified the request using deterministic keyword rules.",
@@ -324,22 +324,22 @@ if __name__ == "__main__":
         {
           label: "AI0_Converged_Minima",
           metrics: [
-            { name: "Loss", value: finalLoss.toFixed(3), unit: "nats" },
-            { name: "Accuracy", value: accuracy.toFixed(1), unit: "%" },
-            { name: "Latency", value: "4.2", unit: "ms" }
+            { name: "Illustrative loss score", value: finalLoss.toFixed(3), unit: "arbitrary score" },
+            { name: "Illustrative accuracy placeholder", value: accuracy.toFixed(1), unit: "not measured" },
+            { name: "Illustrative latency placeholder", value: "4.2", unit: "not measured" }
           ]
         },
         {
           label: "AI1_Initialization_State",
           metrics: [
-            { name: "Loss", value: initialLoss.toFixed(2), unit: "nats" },
-            { name: "Accuracy", value: "11.2", unit: "%" },
-            { name: "Latency", value: "4.1", unit: "ms" }
+            { name: "Illustrative initial loss score", value: initialLoss.toFixed(2), unit: "arbitrary score" },
+            { name: "Illustrative initial accuracy placeholder", value: "11.2", unit: "not measured" },
+            { name: "Illustrative initial latency placeholder", value: "4.1", unit: "not measured" }
           ]
         }
       ],
       transitions: [
-        { from: "AI1_Initialization_State", to: "AI0_Converged_Minima", probability: "0.992" }
+        { from: "AI1_Initialization_State", to: "AI0_Converged_Minima", probability: "Not calibrated" }
       ],
       deterministicSteps: [
         "1. Classified the request using deterministic keyword rules.",
@@ -400,22 +400,22 @@ if __name__ == "__main__":
       {
         label: "P0_Quiescent_H_Mode",
         metrics: [
-          { name: "Core Ion Temperature", value: coreTempKeV.toFixed(1), unit: "keV" },
-          { name: "Confinement Time", value: tauE.toFixed(2), unit: "s" },
-          { name: "Toroidal Field", value: B_toroidal.toFixed(1), unit: "Tesla" }
+          { name: "Illustrative core-temperature estimate", value: coreTempKeV.toFixed(1), unit: "keV (unvalidated)" },
+          { name: "Illustrative confinement-time estimate", value: tauE.toFixed(2), unit: "s (unvalidated)" },
+          { name: "Illustrative toroidal-field estimate", value: B_toroidal.toFixed(1), unit: "T (unvalidated)" }
         ]
       },
       {
         label: "P1_Near_Disruptive_Beta",
         metrics: [
-          { name: "Core Ion Temperature", value: (coreTempKeV * 0.55).toFixed(1), unit: "keV" },
-          { name: "Confinement Time", value: (tauE * 0.33).toFixed(2), unit: "s" },
-          { name: "Toroidal Field", value: (B_toroidal * 0.96).toFixed(1), unit: "Tesla" }
+          { name: "Illustrative perturbed core-temperature estimate", value: (coreTempKeV * 0.55).toFixed(1), unit: "keV (unvalidated)" },
+          { name: "Illustrative perturbed confinement-time estimate", value: (tauE * 0.33).toFixed(2), unit: "s (unvalidated)" },
+          { name: "Illustrative perturbed toroidal-field estimate", value: (B_toroidal * 0.96).toFixed(1), unit: "T (unvalidated)" }
         ]
       }
     ],
     transitions: [
-      { from: "P1_Near_Disruptive_Beta", to: "P0_Quiescent_H_Mode", probability: "0.91" }
+      { from: "P1_Near_Disruptive_Beta", to: "P0_Quiescent_H_Mode", probability: "Not calibrated" }
     ],
     deterministicSteps: [
       "1. Classified the request using deterministic keyword rules.",
