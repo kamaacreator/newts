@@ -47,10 +47,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install independent structural alignment implementation
-        run: python -m pip install biopython==1.83
+        run: python -m pip install biopython==1.83 numpy==1.26.4
 
       - name: Cross-check RMSD against Biopython Kabsch superposition
         run: python tests/independent_rmsd_validation.py
+
+      - name: Test scientific structure benchmark harness
+        run: python -m unittest discover -s tests -p 'test_*.py'
 
       - name: Production build
         run: npm run build

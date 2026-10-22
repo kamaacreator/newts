@@ -22,6 +22,7 @@ A blocked or not-applicable gate is never silently converted into a pass. The re
 - [ ] Docker image builds from a clean context.
 - [ ] Container smoke test imports the exact PyTorch, ESM and OpenFold packages.
 - [ ] Independent RMSD cross-check agrees with Biopython's Kabsch superposition within 0.01 Å for both rigid-body and perturbed reference cases.
+- [ ] Structure benchmark harness tests sequence mapping, coverage, output hashes, perturbation sensitivity, and strict failure on predicted-sequence mismatch.
 - [ ] Test artifacts and outputs are retained or linked from the release report.
 
 ## Gate B — API and data integrity
@@ -55,6 +56,7 @@ A CI container build does not satisfy live model execution. Mocked model tests d
 - [ ] Prevent training/evaluation leakage to the extent model/data provenance permits; explicitly document unavoidable overlap for pretrained models.
 - [ ] Predeclare metrics, atom selection, residue mapping, missing-residue treatment, acceptance thresholds, and evaluation exclusions.
 - [ ] Compare against at least one independent reference implementation.
+- [ ] Run `folding-service/benchmark_predictions.py` on the curated manifest and retain its per-target CSV and aggregate JSON.
 - [ ] Report per-target results and aggregate distributions, not only a best example or mean.
 - [ ] Evaluate confidence calibration separately from coordinate accuracy.
 - [ ] Document failure cases, sequence-length limits, disordered regions, multimer/ligand limitations, and model license/intended use.
