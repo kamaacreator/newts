@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - "build/**"
   workflow_dispatch:
 
 permissions:
@@ -34,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Audit locked npm dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=low
 
       - name: TypeScript check
         run: npm run lint
