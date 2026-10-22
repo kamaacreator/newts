@@ -31,7 +31,10 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci
+
+      - name: Audit locked npm dependencies
+        run: npm audit --audit-level=high
 
       - name: TypeScript check
         run: npm run lint
