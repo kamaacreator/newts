@@ -36,7 +36,7 @@ test('protein heuristic output responds to temperature input', () => {
 
   assert.notEqual(
     at25.states[0].metrics.find((metric) => metric.name === 'Illustrative energy-like score')?.value,
-    at60.states[0].metrics.find((metric) => metric.name === 'Gibbs Free Energy')?.value,
+    at60.states[0].metrics.find((metric) => metric.name === 'Illustrative energy-like score')?.value,
   );
 });
 
@@ -45,7 +45,7 @@ test('protein heuristic never fabricates a coordinate-derived RMSD', () => {
     activeDomain: 'BIOLOGY',
     globalEnv: { temperature: 25, znConcentration: 1.0 },
   });
-  const rmsd = result.states[0].metrics.find((metric) => metric.name === 'Backbone RMSD');
+  const rmsd = result.states[0].metrics.find((metric) => metric.name === 'Coordinate-derived RMSD');
 
   assert.ok(rmsd);
   assert.equal(rmsd?.value, 'Not calculated');
