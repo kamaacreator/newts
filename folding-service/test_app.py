@@ -83,3 +83,51 @@ class FoldingServiceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+    def test_liveness_and_readiness_are_distinct(self):
+        service_module.MODEL = None
+        self.assertEqual(self.client.get("/healthz").status_code, 200)
+        response = self.client.get("/readyz")
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(response.json()["ready"])
+        service_module.MODEL = object()
+        try:
+            response = self.client.get("/readyz")
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.json()["ready"])
+        finally:
+            service_module.MODEL = None
+
+    def test_rejects_multichain_pdb_output(self):
+        two_chain_pdb = "\\n".join([
+            UBIQUITIN_PDB.splitlines()[0][:21] + "A" + UBIQUITIN_PDB.splitlines()[0][22:],
+            UBIQUITIN_PDB.splitlines()[1][:21] + "B" + UBIQUITIN_PDB.splitlines()[1][22:],
+            "END",
+        ])
+        with self.assertRaisesRegex(ValueError, "single-chain"):
+            pdb_ca_sequence(two_chain_pdb)
+
+    def test_rejects_malformed_coordinate_fields(self):
+        line = next(line for line in UBIQUITIN_PDB.splitlines() if line.startswith("ATOM") and line[12:16].strip() == "CA")
+        malformed = line[:30] + "   BAD  " + line[38:]
+        with self.assertRaisesRegex(ValueError, "invalid C-alpha coordinates"):
+            pdb_ca_sequence(malformed)
+
+    def test_maps_inference_exception_to_service_unavailable(self):
+        with patch.object(service_module, "infer_pdb", side_effect=RuntimeError("private backend detail")):
+            response = self.client.post(
+                "/predict",
+                content=UBIQUITIN_SEQUENCE,
+                headers={"Authorization": "Bearer " + KEY},
+            )
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("private backend detail", response.text)
+
+    def test_rejects_non_utf8_request(self):
+        response = self.client.post(
+            "/predict",
+            content=b"\\xff\\xfe",
+            headers={"Authorization": "Bearer " + KEY},
+        )
+        self.assertEqual(response.status_code, 400)
