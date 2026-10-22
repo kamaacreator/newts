@@ -78,7 +78,7 @@ jobs:
     name: Build ESMFold inference container
     needs:
       - typecheck-and-build
-      - folding-service-contract-tests
+      - folding-service-contract
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
