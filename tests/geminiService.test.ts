@@ -21,7 +21,7 @@ test('protein heuristic returns a deterministic structured result', () => {
   assert.ok(first.deterministicCode?.includes('ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS'));
   assert.deepEqual(first, second);
   assert.ok(first.states.length > 0);
-  assert.ok(first.deterministicCode?.includes('compute_folding_energy'));
+  assert.ok(first.deterministicCode?.includes('illustrative_folding_formula'));
 });
 
 test('protein heuristic output responds to temperature input', () => {
@@ -35,21 +35,21 @@ test('protein heuristic output responds to temperature input', () => {
   });
 
   assert.notEqual(
-    at25.states[0].metrics.find((metric) => metric.name === 'Gibbs Free Energy')?.value,
+    at25.states[0].metrics.find((metric) => metric.name === 'Illustrative energy-like score')?.value,
     at60.states[0].metrics.find((metric) => metric.name === 'Gibbs Free Energy')?.value,
   );
 });
 
-test('protein heuristic exposes threshold-selected rather than structure-derived RMSD', () => {
+test('protein heuristic never fabricates a coordinate-derived RMSD', () => {
   const result = generateLocalDeterministicResolution('protein folding', {
     activeDomain: 'BIOLOGY',
     globalEnv: { temperature: 25, znConcentration: 1.0 },
   });
   const rmsd = result.states[0].metrics.find((metric) => metric.name === 'Backbone RMSD');
 
-  // Documents the current threshold behavior; this is not scientific validation.
   assert.ok(rmsd);
-  assert.equal(rmsd?.value, '0.08');
+  assert.equal(rmsd?.value, 'Not calculated');
+  assert.equal(rmsd?.unit, 'not available');
 });
 
 
