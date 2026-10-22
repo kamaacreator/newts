@@ -116,10 +116,16 @@ def evaluate_pair(
     target_sequence: str,
     reference_pdb: Path,
     predicted_pdb: Path,
+    provider: str,
+    model_id: str,
+    prediction_method: str,
+    prediction_date: Optional[str] = None,
     reference_chain: Optional[str] = None,
     predicted_chain: Optional[str] = None,
 ) -> Dict[str, object]:
     sequence = normalize_sequence(target_sequence)
+    if not provider.strip() or not model_id.strip() or not prediction_method.strip():
+        raise BenchmarkError("Provider, model_id, and prediction_method are required provenance fields.")
     predicted_sequence, predicted_atoms, predicted_bfactors, predicted_chain_used = _chain_ca_data(
         predicted_pdb, predicted_chain
     )
@@ -161,6 +167,10 @@ def evaluate_pair(
     sequence_identity = matched / paired_alignment_columns if paired_alignment_columns else 0.0
     row: Dict[str, object] = {
         "target_id": target_id,
+        "provider": provider.strip(),
+        "model_id": model_id.strip(),
+        "prediction_method": prediction_method.strip(),
+        "prediction_date": (prediction_date or "").strip(),
         "method_version": METHOD_VERSION,
         "input_sequence_length": len(sequence),
         "reference_ca_residue_count": len(reference_atoms),
@@ -205,7 +215,7 @@ def run_benchmark(manifest_path: Path, output_csv: Path, summary_json: Path) -> 
     rows: List[Dict[str, object]] = []
     with manifest_path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
-        required = {"target_id", "sequence", "reference_pdb", "predicted_pdb"}
+        required = {"target_id", "sequence", "reference_pdb", "predicted_pdb", "provider", "model_id", "prediction_method"}
         if reader.fieldnames is None or not required.issubset(set(reader.fieldnames)):
             raise BenchmarkError(
                 "Manifest must contain columns: target_id, sequence, reference_pdb, predicted_pdb; "
@@ -225,6 +235,10 @@ def run_benchmark(manifest_path: Path, output_csv: Path, summary_json: Path) -> 
                     target_sequence=record["sequence"],
                     reference_pdb=reference_pdb,
                     predicted_pdb=predicted_pdb,
+                    provider=record["provider"],
+                    model_id=record["model_id"],
+                    prediction_method=record["prediction_method"],
+                    prediction_date=record.get("prediction_date"),
                     reference_chain=(record.get("reference_chain") or "").strip() or None,
                     predicted_chain=(record.get("predicted_chain") or "").strip() or None,
                 )
@@ -232,6 +246,13 @@ def run_benchmark(manifest_path: Path, output_csv: Path, summary_json: Path) -> 
 
     if not rows:
         raise BenchmarkError("Manifest contains no benchmark targets.")
+
+    model_provenance = {
+        (str(row["provider"]), str(row["model_id"]), str(row["prediction_method"]))
+        for row in rows
+    }
+    if len(model_provenance) != 1:
+        raise BenchmarkError("One manifest must evaluate exactly one provider/model/method version; use separate manifests for model comparisons.")
 
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     with output_csv.open("w", encoding="utf-8", newline="") as handle:
@@ -243,6 +264,12 @@ def run_benchmark(manifest_path: Path, output_csv: Path, summary_json: Path) -> 
     summary: Dict[str, object] = {
         "method_version": METHOD_VERSION,
         "biopython_version": Bio.__version__,
+        "provider": rows[0]["provider"],
+        "model_id": rows[0]["model_id"],
+        "prediction_method": rows[0]["prediction_method"],
+        "prediction_date": rows[0]["prediction_date"],
+        "manifest_sha256": _sha256_file(manifest_path),
+        "results_csv_sha256": _sha256_file(output_csv),
         "target_count": len(rows),
         "mean_aligned_ca_rmsd_angstrom": round(statistics.mean(rmsds), 6),
         "median_aligned_ca_rmsd_angstrom": round(statistics.median(rmsds), 6),
