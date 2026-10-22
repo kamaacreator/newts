@@ -43,19 +43,19 @@ export function generateLocalDeterministicResolution(
 
       const pamMatch = !cmdLower.includes('non-pam') && !cmdLower.includes('mismatch_pam');
 
-      // Thermodynamic calculations
+      // Toy scalar-score calculations; not calibrated thermodynamics
       const dG_pam = pamMatch ? -4.5 : 1.2; // kcal/mol
       const dG_seed = -1.8 * 8; // kcal/mol (8-bp PAM-proximal seed)
       const dG_nonseed = -1.1 * Math.max(0, guideLength - 8); // kcal/mol
       const chromatinBarrier = 3.6 * chromatinDensity; // kcal/mol penalty from nucleosome wrapping
       const total_dG = dG_pam + dG_seed + dG_nonseed + chromatinBarrier;
 
-      // Rate via Arrhenius-Eyring transition state formulation
+      // Illustrative exponential score; not a calibrated kinetic model
       const R = 1.987e-3; // kcal/(mol*K)
       const T_kelvin = 273.15 + currentTemp;
       const k_cleave = Math.exp(-Math.max(0.1, total_dG + 14.5) / (R * T_kelvin));
 
-      // HDR vs NHEJ bifurcation
+      // Uncalibrated HDR/NHEJ-like heuristic scores
       const hdrFraction = 1.0 / (1.0 + Math.exp(total_dG + 8.0));
       const unwindingTimeMs = 14.2 / Math.max(0.1, 1.0 - chromatinDensity * 0.7);
       const nhejProb = Math.min(0.95, 0.04 * (1.0 + chromatinDensity * 2.0));
@@ -140,7 +140,7 @@ if __name__ == "__main__":
       };
     }
 
-    // Default Protein Folding / Biophysics (p53 Sovereign Attractor)
+    // Default protein heuristic illustration; this is not a folding calculation
     const residueCount = 393;
     const hydrophobicLikeScore = -0.025 * residueCount;
     const zincLikeScore = -3.8 * Math.min(1.0, currentZn);
@@ -375,7 +375,7 @@ if __name__ == "__main__":
     };
   }
 
-  // 5. PHYSICS DOMAIN (Tokamak Plasma Grad-Shafranov)
+  // 5. PHYSICS DOMAIN (illustrative plasma formulas; no Grad–Shafranov solver)
   const bMatch = command.match(/B(?:_toroidal)?\s*[:=]\s*([\d.]+)/i);
   const B_toroidal = bMatch ? parseFloat(bMatch[1]) : 5.3;
 
