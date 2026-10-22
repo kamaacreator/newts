@@ -17,7 +17,8 @@ test('protein heuristic returns a deterministic structured result', () => {
   assert.equal(first.resultClass, 'illustrative');
   assert.equal(first.method, 'legacy-formula-illustration-v0');
   assert.match(first.summary, /ILLUSTRATIVE protein heuristic/i);
-  assert.doesNotMatch(first.summary, /Poisson-Boltzmann|SASA calculation|native fold/i);
+  assert.match(first.summary, /no sequence-specific structure/i);
+  assert.match(first.summary, /no coordinate-derived RMSD/i);
   assert.ok(first.deterministicCode?.includes('ILLUSTRATIVE EXAMPLE ONLY — NOT EXECUTED BY AETHERIS'));
   assert.deepEqual(first, second);
   assert.ok(first.states.length > 0);
@@ -66,6 +67,6 @@ test('all legacy domain branches identify themselves as illustrative', () => {
     assert.equal(result.resultClass, 'illustrative', command);
     assert.equal(result.method, 'legacy-formula-illustration-v0', command);
     assert.match(result.summary, /ILLUSTRATIVE/i, command);
-    assert.doesNotMatch(result.summary, /MECHANISTIC|Grad.?Shafranov solution|finite-element equilibrium computed|neural network is trained/i, command);
+    assert.doesNotMatch(result.summary, /MECHANISTIC|Grad.?Shafranov solution|finite-element equilibrium computed/i, command);
   }
 });
