@@ -131,6 +131,7 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 app.use('/api/agent', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
   if (process.env.NODE_ENV !== 'production') return next();
   if (!authIsConfigured(authConfig)) {
     return res.status(503).json({ error: 'API disabled until production authentication is configured' });
