@@ -95,7 +95,7 @@ A release is eligible for scientific review only when:
 - Authentication hardening is integrated into the current quality-gates branch: unique revocable sessions, login throttling, no-store auth responses, malformed-cookie handling, and explicit reverse-proxy trust configuration.
 - The folding API uses a configured provider/model, validates sequence/PDB correspondence, records provenance, bounds response size and timeout, and fails closed if no provider is configured.
 - A self-hosted ESMFold v1 service is included with bearer-token auth, bounded request size, output validation, readiness/liveness, and a cap of two in-flight requests.
-- CI now requires lockfile-exact npm installation, dependency audit, type checking, all Node tests, the independent RMSD cross-check, production build, Python contract tests, and a container build/import smoke test.
+- CI now requires lockfile-exact npm installation, zero npm audit findings, type checking, all Node tests, an independent RMSD cross-check, production build, Python contract tests, and a container build/import smoke test. The current feature branch also marks legacy formula outputs as illustrative and removes fabricated coordinate-derived RMSD values.
 
 ### Current verification status
 
