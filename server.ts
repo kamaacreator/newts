@@ -16,6 +16,16 @@ const app = express();
 // Nginx listens on 8080 and proxies to port 3000 (DEFAULT_APP_PORT). Node must listen on 3000.
 const PORT = Number(process.env.DEFAULT_APP_PORT) || 3000;
 
+// Trust forwarded client addresses only when the deployment explicitly declares
+// the exact number of trusted reverse-proxy hops. Never trust arbitrary forwarded headers.
+const trustProxyHops = process.env.AETHERIS_TRUST_PROXY_HOPS === undefined
+  ? 0
+  : Number(process.env.AETHERIS_TRUST_PROXY_HOPS);
+if (!Number.isInteger(trustProxyHops) || trustProxyHops < 0 || trustProxyHops > 3) {
+  throw new Error('AETHERIS_TRUST_PROXY_HOPS must be an integer from 0 to 3.');
+}
+if (trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
+
 app.use(express.json({ limit: '2mb' }));
 
 // Validate API payloads at the boundary. This does not replace authentication;
