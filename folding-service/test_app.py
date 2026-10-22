@@ -109,7 +109,7 @@ class FoldingServiceTests(unittest.TestCase):
             if len(ca_lines) == 2:
                 break
         self.assertEqual(len(ca_lines), 2)
-        two_chain_pdb = "\\n".join([
+        two_chain_pdb = "\n".join([
             ca_lines[0][:21] + "A" + ca_lines[0][22:],
             ca_lines[1][:21] + "B" + ca_lines[1][22:],
             "END",
@@ -136,7 +136,7 @@ class FoldingServiceTests(unittest.TestCase):
     def test_rejects_non_utf8_request(self):
         response = self.client.post(
             "/predict",
-            content=b"\\xff\\xfe",
+            content=bytes([0xFF, 0xFE]),
             headers={"Authorization": "Bearer " + KEY},
         )
         self.assertEqual(response.status_code, 400)
