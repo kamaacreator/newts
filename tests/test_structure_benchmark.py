@@ -106,6 +106,7 @@ class StructureBenchmarkTests(unittest.TestCase):
         self.assertEqual(summary["target_count"], 1)
         self.assertEqual(summary["provider"], "self-hosted")
         self.assertEqual(summary["model_id"], "esmfold_v1")
+        self.assertEqual(summary["prediction_dates"], ["2026-10-22T00:00:00Z"])
         self.assertTrue(summary["manifest_sha256"])
         self.assertTrue(summary["results_csv_sha256"])
         saved_summary = json.loads(summary_json.read_text(encoding="utf-8"))
