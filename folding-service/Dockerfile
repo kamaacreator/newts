@@ -21,10 +21,13 @@ RUN printf 'numpy==1.23.5\n' > /app/constraints.txt
 
 COPY requirements.txt ./requirements.txt
 RUN python -m pip install --upgrade 'pip==24.3.1' && \
-    python -m pip install -c /app/constraints.txt -r requirements.txt && \
-    python -c "import torch, esm, openfold; print('torch=', torch.__version__, 'cuda=', torch.version.cuda, 'esm=', esm.__file__, 'openfold=', openfold.__file__)"
+    python -m pip install -c /app/constraints.txt -r requirements.txt
 
 COPY app.py ./app.py
+
+# Import the actual service under the same pinned runtime used in production.
+# This is a packaging smoke test only; it deliberately does not download model weights.
+RUN python -c "import sys, torch, esm, openfold, fastapi, uvicorn, app; print('python=', sys.version.split()[0], 'torch=', torch.__version__, 'cuda_build=', torch.version.cuda, 'esm=', esm.__file__, 'openfold=', openfold.__file__, 'fastapi=', fastapi.__version__, 'uvicorn=', uvicorn.__version__)"
 
 EXPOSE 8080
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1"]
