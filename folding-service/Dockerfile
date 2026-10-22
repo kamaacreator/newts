@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends git build-essen
 RUN printf 'numpy==1.23.5\n' > /app/constraints.txt
 
 COPY requirements.txt ./requirements.txt
-RUN python -m pip install --upgrade 'pip<25' && \
+RUN python -m pip install --upgrade 'pip==24.3.1' && \
     python -m pip install -c /app/constraints.txt -r requirements.txt && \
     python -c "import torch, esm, openfold; print('torch=', torch.__version__, 'cuda=', torch.version.cuda, 'esm=', esm.__file__, 'openfold=', openfold.__file__)"
 
