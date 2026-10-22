@@ -1,6 +1,9 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { resetLoginRateLimitForTests } from '../services/loginRateLimit.ts';
 
 // Set the production configuration before importing server.ts, whose auth config
@@ -10,6 +13,9 @@ process.env.AETHERIS_USERNAME = 'integration-operator';
 process.env.AETHERIS_PASSWORD = 'test-only-password-not-for-deployment';
 process.env.AETHERIS_SESSION_SECRET = 'integration-test-secret-0123456789abcdef0123456789';
 process.env.AETHERIS_TRUST_PROXY_HOPS = '0';
+const originalCwd = process.cwd();
+const isolatedStorageDir = mkdtempSync(join(tmpdir(), 'aetheris-auth-test-'));
+process.chdir(isolatedStorageDir);
 
 const { app } = await import('../server.ts');
 const server = createServer(app);
@@ -25,6 +31,8 @@ after(async () => {
   await new Promise<void>((resolve, reject) => {
     server.close((error) => error ? reject(error) : resolve());
   });
+  process.chdir(originalCwd);
+  rmSync(isolatedStorageDir, { recursive: true, force: true });
 });
 
 async function login(username = process.env.AETHERIS_USERNAME!, password = process.env.AETHERIS_PASSWORD!) {
@@ -86,4 +94,30 @@ test('malformed percent-encoding in a cookie does not crash the auth endpoint', 
   });
   assert.equal(response.status, 200);
   assert.equal((await response.json() as { authenticated: boolean }).authenticated, false);
+});
+
+
+test('illustrative protein formula is not allowed to mutate engine scientific metrics', async () => {
+  resetLoginRateLimitForTests();
+  const loginResponse = await login();
+  assert.equal(loginResponse.status, 200);
+  const cookie = (loginResponse.headers.get('set-cookie') ?? '').split(';')[0];
+  assert.ok(cookie);
+
+  const response = await fetch(`${baseUrl}/api/agent/commands`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ command: 'protein folding' }),
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json() as {
+    finalResult: { resultClass?: string; method?: string };
+    engine: { entities: Array<{ id: string; metrics: { gibbsFreeEnergy: number } }>; logs: string[] };
+  };
+  assert.equal(body.finalResult.resultClass, 'illustrative');
+  assert.equal(body.finalResult.method, 'legacy-formula-illustration-v0');
+  const p53 = body.engine.entities.find((entity) => entity.id === 'p53-sovereign');
+  assert.ok(p53);
+  assert.equal(p53.metrics.gibbsFreeEnergy, -7.5);
+  assert.ok(body.engine.logs.some((line) => line.includes('[RESULT] illustrative result produced')));
 });
