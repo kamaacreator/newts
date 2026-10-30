@@ -54,3 +54,26 @@ CI tests exercise input validation, authentication, output parsing, sequence mat
 ## License and intended use
 
 Review the ESM/ESMFold and transitive dependency licenses, model-weight terms, privacy obligations, and the intended-use limitations before deployment. Do not use predicted structures for clinical or therapeutic decisions without appropriate independent validation.
+
+## Container compatibility repair (30 October 2026)
+
+Runs 39699697058 and 39700161708 failed importing DeepSpeed 0.5.9 because it
+requires `torch._six`, removed from the PyTorch 2.0 image. The candidate now
+installs upstream ESMFold extras explicitly with DeepSpeed 0.9.5, constrains
+PyTorch/torchvision to the base runtime, and imports the actual ESMFold class
+without downloading model weights in the image build. CUDA architecture targets
+are explicit so building does not require an attached GPU.
+
+Upstream dependency definition: https://github.com/facebookresearch/esm/blob/main/setup.py
+Upstream removal fix: https://github.com/deepspeedai/DeepSpeed/pull/2863
+
+This is a compatibility candidate, not a validated scientific or production
+release. The full container build must pass, followed by target-host CUDA checks,
+model download/inference, curated reference benchmarks and independent review.
+No full GPU inference or production deployment has been performed in this run.
+
+The image smoke gate now prints each production import stage, dumps tracebacks
+if an import stalls, and fails after five minutes. Cache I/O has a separate
+two-minute budget; cache export is optional, while image build, dependency checks
+and runtime imports remain mandatory. These diagnostics do not load weights or
+substitute for real inference validation.
