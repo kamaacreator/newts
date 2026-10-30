@@ -71,3 +71,9 @@ This is a compatibility candidate, not a validated scientific or production
 release. The full container build must pass, followed by target-host CUDA checks,
 model download/inference, curated reference benchmarks and independent review.
 No full GPU inference or production deployment has been performed in this run.
+
+The image smoke gate now prints each production import stage, dumps tracebacks
+if an import stalls, and fails after five minutes. Cache I/O has a separate
+two-minute budget; cache export is optional, while image build, dependency checks
+and runtime imports remain mandatory. These diagnostics do not load weights or
+substitute for real inference validation.

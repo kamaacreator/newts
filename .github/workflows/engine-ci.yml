@@ -98,5 +98,5 @@ jobs:
           file: ./folding-service/Dockerfile
           push: false
           tags: aetheris-esmfold:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,timeout=2m
+          cache-to: type=gha,mode=max,ignore-error=true,timeout=2m
