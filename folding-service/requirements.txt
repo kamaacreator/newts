@@ -19,5 +19,5 @@ dllogger @ git+https://github.com/NVIDIA/dllogger.git@0478734ff7be75adde8d160e04
 openfold @ git+https://github.com/aqlaboratory/openfold.git@4b41059694619831a7db195b7e0988fc4ff3a307
 
 # Required by the base image Triton installation; checked with pip check.
-cmake==3.27.9
+cmake==3.31.10
 lit==18.1.8
