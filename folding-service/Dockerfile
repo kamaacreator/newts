@@ -22,7 +22,8 @@ RUN printf 'numpy==1.23.5\ntorch==2.0.0\ntorchvision==0.15.1\n' > /app/constrain
 
 COPY requirements.txt ./requirements.txt
 RUN python -m pip install --upgrade 'pip==24.3.1' && \
-    python -m pip install -c /app/constraints.txt -r requirements.txt
+    python -m pip install -c /app/constraints.txt -r requirements.txt && \
+    python -m pip check
 
 COPY app.py ./app.py
 
