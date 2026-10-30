@@ -3,6 +3,17 @@
 numpy==1.23.5
 fastapi==0.110.3
 uvicorn[standard]==0.29.0
-fair-esm[esmfold]==2.0.0
+# Install ESMFold extras explicitly: upstream fair-esm[esmfold] pins DeepSpeed
+# 0.5.9, which imports torch._six removed in PyTorch 2. No monkey patching.
+fair-esm==2.0.0
+deepspeed==0.9.5
+biopython==1.83
+dm-tree==0.1.8
+pytorch-lightning==2.0.9
+torchmetrics==1.1.2
+omegaconf==2.3.0
+ml-collections==0.1.1
+einops==0.6.1
+scipy==1.10.1
 dllogger @ git+https://github.com/NVIDIA/dllogger.git@0478734ff7be75adde8d160e04872664d1c62e5f
 openfold @ git+https://github.com/aqlaboratory/openfold.git@4b41059694619831a7db195b7e0988fc4ff3a307
